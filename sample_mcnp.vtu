@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<VTKFile type="UnstructuredGrid" version="0.1" byte_order="LittleEndian">
+  <UnstructuredGrid><Piece NumberOfPoints="6" NumberOfCells="2">
+    <CellData Scalars="cell_id">
+      <DataArray type="Int32" Name="cell_id" format="ascii">
+1 1
+      </DataArray>
+      <DataArray type="Int32" Name="material_id" format="ascii">
+1 1
+      </DataArray>
+      <DataArray type="Int32" Name="surface_id" format="ascii">
+1001 1001
+      </DataArray>
+      <DataArray type="Int32" Name="universe_id" format="ascii">
+0 0
+      </DataArray>
+    </CellData>
+    <Points>
+      <DataArray type="Float64" NumberOfComponents="3" format="ascii">
+  0.0000000000000000E+00   0.0000000000000000E+00   0.0000000000000000E+00
+  1.0000000000000000E+01   0.0000000000000000E+00   0.0000000000000000E+00
+  1.0000000000000000E+01   1.0000000000000000E+01   0.0000000000000000E+00
+  0.0000000000000000E+00   0.0000000000000000E+00   0.0000000000000000E+00
+  1.0000000000000000E+01   1.0000000000000000E+01   0.0000000000000000E+00
+  0.0000000000000000E+00   1.0000000000000000E+01   0.0000000000000000E+00
+      </DataArray>
+    </Points>
+    <Cells>
+      <DataArray type="Int32" Name="connectivity" format="ascii">
+0 1 2
+3 4 5
+      </DataArray>
+      <DataArray type="Int32" Name="offsets" format="ascii">
+3
+6
+      </DataArray>
+      <DataArray type="UInt8" Name="types" format="ascii">
+5
+5
+      </DataArray>
+    </Cells>
+  </Piece></UnstructuredGrid>
+</VTKFile>

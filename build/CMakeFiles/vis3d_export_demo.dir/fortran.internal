@@ -1,0 +1,23 @@
+# The fortran modules provided by this target.
+provides
+ vis3d_bbox.mod
+ vis3d_config.mod
+ vis3d_constants.mod
+ vis3d_driver.mod
+ vis3d_geom_context.mod
+ vis3d_host_types.mod
+ vis3d_input_common.mod
+ vis3d_input_mcnp.mod
+ vis3d_input_mcx.mod
+ vis3d_kinds.mod
+ vis3d_sampler_voxel.mod
+ vis3d_surface_patch.mod
+ vis3d_surface_quadric.mod
+ vis3d_surface_rcc.mod
+ vis3d_surface_trc.mod
+ vis3d_types.mod
+ vis3d_validate.mod
+ vis3d_writer_vti.mod
+ vis3d_writer_vtp.mod
+ vis3d_writer_vtu.mod
+ vis3d_writer_xml.mod

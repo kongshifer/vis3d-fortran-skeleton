@@ -1,0 +1,3 @@
+/mnt/data/vis3d_fortran_skeleton/build/CMakeFiles/vis3d_export_demo.dir
+/mnt/data/vis3d_fortran_skeleton/build/CMakeFiles/edit_cache.dir
+/mnt/data/vis3d_fortran_skeleton/build/CMakeFiles/rebuild_cache.dir

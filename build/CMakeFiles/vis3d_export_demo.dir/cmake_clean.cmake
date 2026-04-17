@@ -1,0 +1,32 @@
+file(REMOVE_RECURSE
+  "CMakeFiles/vis3d_export_demo.dir/link.d"
+  "CMakeFiles/vis3d_export_demo.dir/src/vis3d_bbox.f90.o"
+  "CMakeFiles/vis3d_export_demo.dir/src/vis3d_config.f90.o"
+  "CMakeFiles/vis3d_export_demo.dir/src/vis3d_constants.f90.o"
+  "CMakeFiles/vis3d_export_demo.dir/src/vis3d_driver.f90.o"
+  "CMakeFiles/vis3d_export_demo.dir/src/vis3d_export_demo.f90.o"
+  "CMakeFiles/vis3d_export_demo.dir/src/vis3d_geom_context.f90.o"
+  "CMakeFiles/vis3d_export_demo.dir/src/vis3d_host_types.f90.o"
+  "CMakeFiles/vis3d_export_demo.dir/src/vis3d_input_common.f90.o"
+  "CMakeFiles/vis3d_export_demo.dir/src/vis3d_input_mcnp.f90.o"
+  "CMakeFiles/vis3d_export_demo.dir/src/vis3d_input_mcx.f90.o"
+  "CMakeFiles/vis3d_export_demo.dir/src/vis3d_kinds.f90.o"
+  "CMakeFiles/vis3d_export_demo.dir/src/vis3d_sampler_voxel.f90.o"
+  "CMakeFiles/vis3d_export_demo.dir/src/vis3d_surface_patch.f90.o"
+  "CMakeFiles/vis3d_export_demo.dir/src/vis3d_surface_quadric.f90.o"
+  "CMakeFiles/vis3d_export_demo.dir/src/vis3d_surface_rcc.f90.o"
+  "CMakeFiles/vis3d_export_demo.dir/src/vis3d_surface_trc.f90.o"
+  "CMakeFiles/vis3d_export_demo.dir/src/vis3d_types.f90.o"
+  "CMakeFiles/vis3d_export_demo.dir/src/vis3d_validate.f90.o"
+  "CMakeFiles/vis3d_export_demo.dir/src/vis3d_writer_vti.f90.o"
+  "CMakeFiles/vis3d_export_demo.dir/src/vis3d_writer_vtp.f90.o"
+  "CMakeFiles/vis3d_export_demo.dir/src/vis3d_writer_vtu.f90.o"
+  "CMakeFiles/vis3d_export_demo.dir/src/vis3d_writer_xml.f90.o"
+  "vis3d_export_demo"
+  "vis3d_export_demo.pdb"
+)
+
+# Per-language clean rules from dependency scanning.
+foreach(lang Fortran)
+  include(CMakeFiles/vis3d_export_demo.dir/cmake_clean_${lang}.cmake OPTIONAL)
+endforeach()
