@@ -1,0 +1,165 @@
+<input>
+  <geometry>
+    <!-- **************************Surface Card**************************** -->
+    <!-- Structure Geometry -->
+    <surface id="a1" type="x-plane" coeffs="-10.71" />
+    <surface id="a2" type="x-plane" coeffs=" 10.71" />
+    <surface id="a3" type="y-plane" coeffs="-10.71" />
+    <surface id="a4" type="y-plane" coeffs=" 10.71" />
+    <surface id="a5" type="x-plane" coeffs="-21.42" boundary="reflect"/>
+    <surface id="a6" type="x-plane" coeffs=" 21.42" />
+    <surface id="a7" type="y-plane" coeffs="-21.42" />
+    <surface id="a8" type="y-plane" coeffs=" 21.42" boundary="reflect"/>
+    <surface id="a9" type="x-plane" coeffs=" 42.84" boundary="vacuum"/>
+    <surface id="a10" type="y-plane" coeffs="-42.84" boundary="vacuum"/>
+    <surface id="z1" type="z-plane" coeffs="   0.0" boundary="reflect"/>
+    <surface id="z2" type="z-plane" coeffs="192.78" />
+    <surface id="z3" type="z-plane" coeffs="214.2" boundary="vacuum"/>
+    <pin id="uo">
+      <materials>uo2 mod</materials>
+      <radii> 0.54 </radii>
+    </pin>
+    <pin id="m1">
+      <materials>mox43 mod</materials>
+      <radii> 0.54 </radii>
+    </pin>
+    <pin id="m2">
+      <materials>mox70 mod</materials>
+      <radii> 0.54 </radii>
+    </pin>
+    <pin id="m3">
+      <materials>mox87 mod</materials>
+      <radii> 0.54 </radii>
+    </pin>
+    <pin id="fc">
+      <materials>chamber mod</materials>
+      <radii> 0.54 </radii>
+    </pin>
+    <pin id="gt">
+      <materials>gtube mod</materials>
+      <radii> 0.54 </radii>
+    </pin>
+    <lattice id="ULatt" type="rectangular">
+      <pitch> 1.26 1.26 </pitch>
+      <dimensions>17 17 </dimensions>
+      <lower_left> -10.71 -10.71 </lower_left>
+      <universes>
+        uo uo uo uo uo uo uo uo uo uo uo uo uo uo uo uo uo
+        uo uo uo uo uo uo uo uo uo uo uo uo uo uo uo uo uo
+        uo uo uo uo uo gt uo uo gt uo uo gt uo uo uo uo uo 
+        uo uo uo gt uo uo uo uo uo uo uo uo uo gt uo uo uo 
+        uo uo uo uo uo uo uo uo uo uo uo uo uo uo uo uo uo 
+        uo uo gt uo uo gt uo uo gt uo uo gt uo uo gt uo uo 
+        uo uo uo uo uo uo uo uo uo uo uo uo uo uo uo uo uo 
+        uo uo uo uo uo uo uo uo uo uo uo uo uo uo uo uo uo 
+        uo uo gt uo uo gt uo uo fc uo uo gt uo uo gt uo uo 
+        uo uo uo uo uo uo uo uo uo uo uo uo uo uo uo uo uo 
+        uo uo uo uo uo uo uo uo uo uo uo uo uo uo uo uo uo 
+        uo uo gt uo uo gt uo uo gt uo uo gt uo uo gt uo uo 
+        uo uo uo uo uo uo uo uo uo uo uo uo uo uo uo uo uo 
+        uo uo uo gt uo uo uo uo uo uo uo uo uo gt uo uo uo 
+        uo uo uo uo uo gt uo uo gt uo uo gt uo uo uo uo uo 
+        uo uo uo uo uo uo uo uo uo uo uo uo uo uo uo uo uo 
+        uo uo uo uo uo uo uo uo uo uo uo uo uo uo uo uo uo 
+      </universes>
+    </lattice>
+    <cell id="uo2_asse" fill="ULatt" zone="a1 -a2 a3 -a4" universe="uasse"/>
+    <lattice id="MLatt" type="rectangular">
+      <pitch> 1.26 1.26 </pitch>
+      <dimensions>17 17 </dimensions>
+      <lower_left> -10.71 -10.71 </lower_left>
+      <universes>
+        m1 m1 m1 m1 m1 m1 m1 m1 m1 m1 m1 m1 m1 m1 m1 m1 m1
+        m1 m2 m2 m2 m2 m2 m2 m2 m2 m2 m2 m2 m2 m2 m2 m2 m1
+        m1 m2 m2 m2 m2 gt m2 m2 gt m2 m2 gt m2 m2 m2 m2 m1 
+        m1 m2 m2 gt m2 m3 m3 m3 m3 m3 m3 m3 m2 gt m2 m2 m1 
+        m1 m2 m2 m2 m3 m3 m3 m3 m3 m3 m3 m3 m3 m2 m2 m2 m1 
+        m1 m2 gt m3 m3 gt m3 m3 gt m3 m3 gt m3 m3 gt m2 m1 
+        m1 m2 m2 m3 m3 m3 m3 m3 m3 m3 m3 m3 m3 m3 m2 m2 m1 
+        m1 m2 m2 m3 m3 m3 m3 m3 m3 m3 m3 m3 m3 m3 m2 m2 m1 
+        m1 m2 gt m3 m3 gt m3 m3 fc m3 m3 gt m3 m3 gt m2 m1 
+        m1 m2 m2 m3 m3 m3 m3 m3 m3 m3 m3 m3 m3 m3 m2 m2 m1 
+        m1 m2 m2 m3 m3 m3 m3 m3 m3 m3 m3 m3 m3 m3 m2 m2 m1 
+        m1 m2 gt m3 m3 gt m3 m3 gt m3 m3 gt m3 m3 gt m2 m1 
+        m1 m2 m2 m2 m3 m3 m3 m3 m3 m3 m3 m3 m3 m2 m2 m2 m1 
+        m1 m2 m2 gt m2 m3 m3 m3 m3 m3 m3 m3 m2 gt m2 m2 m1 
+        m1 m2 m2 m2 m2 gt m2 m2 gt m2 m2 gt m2 m2 m2 m2 m1 
+        m1 m2 m2 m2 m2 m2 m2 m2 m2 m2 m2 m2 m2 m2 m2 m2 m1
+        m1 m1 m1 m1 m1 m1 m1 m1 m1 m1 m1 m1 m1 m1 m1 m1 m1 
+      </universes>
+    </lattice>
+    <cell id="mox_asse" fill="MLatt" zone="a1 -a2 a3 -a4" universe="masse"/>
+    <cell id="moderator1" material="mod" zone="a1 -a2 a3 -a4" universe="modrt"/>
+    <lattice id="FLatt" type="rectangular">
+      <pitch> 21.42 21.42 </pitch>
+      <dimensions>3 3 </dimensions>
+      <lower_left> -21.42 -42.84 </lower_left>
+      <universes>
+        modrt modrt modrt
+        masse uasse modrt
+        uasse masse modrt
+      </universes>
+    </lattice>
+    <cell id="asse_region" fill="FLatt" zone="a5 -a9 a10 -a8 z1 -z2" />
+    <cell id="up_moderator" material="mod" zone="a5 -a9 a10 -a8 z2 -z3" />
+  </geometry>
+  
+  <materials>
+    <library type="necp-x-mg" path="c5g7_xs.txt" />
+    <material id="uo2"/>
+    <material id="mox43"/>
+    <material id="mox70"/>
+    <material id="mox87"/>
+    <material id="chamber"/>
+    <material id="gtube"/>
+    <material id="mod"/>
+  </materials>
+
+  <meshes>
+    <mesh id="pin_mesh" type="rectangular" widthtype="equal">
+      <n_mesh> 34 34 1 </n_mesh>
+      <lower_left> -21.42 -21.42 0.0 </lower_left>
+      <width> 1.26 1.26 192.78 </width>
+    </mesh>
+  </meshes>
+  
+  <options>
+  	<run_mode>criticality</run_mode>
+    <!--energy_lookup> hash </energy_lookup-->
+    <batch>4</batch>
+    <cycle>500</cycle>
+    <inactive>100</inactive>
+    <particles>100000</particles>
+    <lost_particles>1000</lost_particles>
+    <initial_box_source>-10.71 10.71 -10.71 10.71 -1 1</initial_box_source>
+  </options>
+
+  <tallies>
+
+    <filter id="fpin" type="mesh">
+      <bins> pin_mesh </bins>
+    </filter>
+
+    <tally id="pin_power" estimator="tracklength">
+      <filters> fpin </filters>
+      <scores> fission-power </scores>
+    </tally>
+
+  </tallies>
+  
+  <!--plots>
+    <plot id="1" color_by="material" basis="xy">
+      <origin>10.71 -10.71 0.0</origin>
+      <width> 70 70 </width>
+      <pixels>1000 1000</pixels>
+    </plot>
+
+    <plot id="2" color_by="material" basis="xz">
+      <origin>10.71 -10.71 107.1</origin>
+      <width> 70 250</width>
+      <pixels>1000 1000</pixels>
+    </plot>
+  </plots-->
+    
+
+</input>

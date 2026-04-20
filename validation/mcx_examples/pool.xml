@@ -1,0 +1,63 @@
+<input>
+  <geometry>
+    <surface id="x_0"   type="plane-x" coeffs="0.0" boundary="out"/>
+    <surface id="x_18"  type="plane-x" coeffs="18.0"/>
+    <surface id="x_48"  type="plane-x" coeffs="48.0"/>
+    <surface id="x_78"  type="plane-x" coeffs="78.0"/>
+    <surface id="x_96"  type="plane-x" coeffs="96.0" boundary="out"/>
+    <surface id="y_0"   type="plane-y" coeffs="0.0" boundary="out"/>
+    <surface id="y_18"  type="plane-y" coeffs="18.0"/>
+    <surface id="y_43"  type="plane-y" coeffs="43.0"/>
+    <surface id="y_68"  type="plane-y" coeffs="68.0"/>
+    <surface id="y_86"  type="plane-y" coeffs="86.0" boundary="out"/>
+    <surface id="z_-20" type="plane-z" coeffs="-20.0" boundary="reflective"/>
+    <surface id="z_20"  type="plane-z" coeffs="20.0" boundary="reflective"/>
+
+    <cell id="1" material="1" zone="x_18 -x_48 y_18 -y_43 z_-20 -z_20"/>
+    <cell id="2" material="2" zone="x_48 -x_78 y_18 -y_43 z_-20 -z_20"/>
+    <cell id="3" material="3" zone="x_48 -x_78 y_43 -y_68 z_-20 -z_20"/>
+    <cell id="4" material="4" zone="x_18 -x_48 y_43 -y_68 z_-20 -z_20"/>
+    <cell id="5" material="5" zone="((x_0 -x_96 y_0 -y_86)~(x_18 -x_78 y_18 -y_68)) z_-20 -z_20"/>
+  </geometry>
+
+  <materials>
+    <library type="necp-x-mg" path="macro_fixed_source.txt"/>
+    <material id="1"/>
+    <material id="2"/>
+    <material id="3"/>
+    <material id="4"/>
+    <material id="5"/>
+  </materials>
+
+  <options>
+    <run_mode>fixed-source</run_mode>
+    <particle_type>n</particle_type>
+    <batch>100</batch>
+    <particles>1000</particles>
+  </options>
+
+  <tallies>
+    <filter id="f_cell" type="cell">
+      <bins>1 2 3 4 5</bins>
+    </filter>
+
+    <tally id="t_flux" estimator="tracklength">
+      <filters>f_cell</filters>
+      <scores>flux</scores>
+    </tally>
+  </tallies>
+
+  <sources>
+    <source id="1" type="neutron" strength="1.0">
+      <space type="box" bins="18 48 18 43 -20 20"/>
+      <energy type="group" bins="1" distribution="1.0"/>
+      <angle type="isotropic"/>
+    </source>
+
+    <source id="2" type="neutron" strength="1.0">
+      <space type="box" bins="48 78 43 68 -20 20"/>
+      <energy type="group" bins="1" distribution="1.0"/>
+      <angle type="isotropic"/>
+    </source>
+  </sources>
+</input>

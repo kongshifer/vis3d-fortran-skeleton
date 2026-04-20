@@ -9,7 +9,14 @@ contains
         character(len=*), intent(in) :: filename
         integer, intent(out) :: unit
         integer, intent(out) :: ierr
-        open(newunit=unit, file=trim(filename), status='replace', action='write', iostat=ierr)
+        character(len=512) :: iomsg
+
+        iomsg = ''
+        open(newunit=unit, file=trim(filename), status='replace', action='write', iostat=ierr, iomsg=iomsg)
+        if (ierr /= 0) then
+            write(*,'(A)') 'VIS3D output open failed: ' // trim(filename)
+            if (len_trim(iomsg) > 0) write(*,'(A)') trim(iomsg)
+        end if
     end subroutine xml_open_file
 
     subroutine xml_close_file(unit)

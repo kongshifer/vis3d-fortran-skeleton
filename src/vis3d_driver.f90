@@ -44,29 +44,52 @@ contains
             call vis3d_read_config_mcnp(input_file, cfg, ierr)
         case default
             ierr = 1
+            write(*,'(A)') 'VIS3D error: unsupported syntax hint.'
             return
         end select
-        if (ierr /= 0) return
+        if (ierr /= 0) then
+            write(*,'(A)') 'VIS3D error: failed while reading VIS3D config.'
+            return
+        end if
         if (.not. cfg%enabled) return
 
         call cfg%validate(ierr, message)
-        if (ierr /= 0) return
+        if (ierr /= 0) then
+            if (len_trim(message) > 0) write(*,'(A)') trim(message)
+            write(*,'(A)') 'VIS3D error: invalid export configuration.'
+            return
+        end if
 
         call resolve_export_plan(cfg, export_mode, export_format, ierr)
-        if (ierr /= 0) return
+        if (ierr /= 0) then
+            write(*,'(A)') 'VIS3D error: unsupported MODE/FORMAT combination.'
+            return
+        end if
 
         call geometry_build_from_input(input_file, syntax_kind, model, ierr)
-        if (ierr /= 0) return
+        if (ierr /= 0) then
+            write(*,'(A,I0)') 'VIS3D error: geometry parsing failed, ierr = ', ierr
+            return
+        end if
 
         call vis3d_build_geom_context(model, ctx, ierr)
-        if (ierr /= 0) return
+        if (ierr /= 0) then
+            write(*,'(A)') 'VIS3D error: failed to build geometry context.'
+            return
+        end if
 
         call vis3d_resolve_bbox(ctx, cfg, resolved_bbox, ierr)
-        if (ierr /= 0) return
+        if (ierr /= 0) then
+            write(*,'(A)') 'VIS3D error: failed to resolve bounding box.'
+            return
+        end if
 
         if (export_mode == VIS3D_MODE_SURFACE) then
             call vis3d_build_surface(ctx, cfg, resolved_bbox, surf, ierr)
-            if (ierr /= 0) return
+            if (ierr /= 0) then
+                write(*,'(A)') 'VIS3D error: failed to tessellate surface geometry.'
+                return
+            end if
             select case (export_format)
             case (VIS3D_FMT_VTP)
                 call write_vtp(trim(cfg%output), surf, cfg%fields, ierr)
@@ -75,10 +98,21 @@ contains
             case default
                 ierr = 1
             end select
+            if (ierr /= 0) then
+                write(*,'(A)') 'VIS3D error: failed to write surface output.'
+                return
+            end if
         else
             call vis3d_sample_voxel(ctx, cfg, resolved_bbox, vox, ierr)
-            if (ierr /= 0) return
+            if (ierr /= 0) then
+                write(*,'(A)') 'VIS3D error: failed to sample voxel model.'
+                return
+            end if
             call write_vti(trim(cfg%output), vox, cfg%fields, ierr)
+            if (ierr /= 0) then
+                write(*,'(A)') 'VIS3D error: failed to write voxel output.'
+                return
+            end if
         end if
     contains
         subroutine resolve_export_plan(cfg, mode_out, format_out, ierr)

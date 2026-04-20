@@ -1,0 +1,103 @@
+<input>
+  <geometry>
+    <!-- **************************Surface Card**************************** -->
+    <!-- Structure Geometry -->
+    <surface id="surf1" type="sphere" coeffs="3.0 0 0.0 2.5" />
+    <surface id="surf2" type="sphere" coeffs="3.0 0 0.0 3.0" />
+    <surface id="x0" type="plane-x" coeffs=" 0.0" boundary="reflective" />
+    <surface id="x1" type="plane-x" coeffs=" 6.0" boundary="reflective" />
+    <surface id="y0" type="plane-y" coeffs="-3.0" boundary="reflective" />
+    <surface id="y1" type="plane-y" coeffs=" 3.0" boundary="reflective" />
+    <surface id="z0" type="plane-z" coeffs="-3.0" boundary="reflective" />
+    <surface id="z1" type="plane-z" coeffs=" 3.0" boundary="reflective" />
+
+    <particle id="triso">
+      <materials> fuel buffer IPyC SiC OPyC graphite </materials>
+      <radii> 0.025 0.034 0.038 0.0415 0.0455 </radii>
+    </particle>
+
+    <cell id="u_zone" fill="triso" zone="-surf1" packing="0.09043" 
+                      packing_type="add"  universe="1" />
+    <cell id="u_zone_o" material="graphite" zone="surf1" universe="1" />
+    <cell id="u_freezone" fill="1" zone="-surf2" />
+    <cell id="coolant" material="air" zone="surf2 x0 -x1 y0 -y1 z0 -z1" />
+    <cell id="outer" material="void" zone="-x0|x1|-y0|y1|-z0|z1" imp:n="0.0" />
+    
+  </geometry>
+
+  <materials>
+    <library type="ace" path="../ace_library/xsdir" with_unified_grid="no" />
+    <!-- Fuel kernel -->
+    <material id="fuel" units="#/barn-cm" temperature="300" >
+      <nuclide id="92235.71c"  ao="3.9500E-03" />
+      <nuclide id="92238.71c"  ao="1.9286E-02" />
+      <nuclide id=" 8016.71c"  ao="4.6472E-02" />
+      <nuclide id=" 5010.71c"  ao="1.8495E-08" />
+      <nuclide id=" 5011.71c"  ao="7.4445E-08" />
+    </material>
+    <!-- Porous carbon buffer -->
+    <material id="buffer" units="#/barn-cm" temperature="300">
+      <nuclide id="6000.71c"  ao="5.51511E-02" sab="Graph.71t" />
+      <nuclide id="5010.71c"  ao="1.58513E-08" />
+      <nuclide id="5011.71c"  ao="6.38035E-08" />
+    </material>
+    <!-- Pyrolytic carbon layer for inner layer -->
+    <material id="IPyC" units="#/barn-cm" temperature="300">
+      <nuclide id="6000.71c"  ao="9.52610E-02" sab="Graph.71t" />
+      <nuclide id="5010.71c"  ao="2.73795E-08" />
+      <nuclide id="5011.71c"  ao="1.10206E-07" />
+    </material>
+    <!-- SiC -->
+    <material id="SiC" units="#/barn-cm" temperature="300">
+      <nuclide id="14028.71c"  ao="4.40486E-02" />
+      <nuclide id="14029.71c"  ao="2.23666E-03" />
+      <nuclide id="14030.71c"  ao="1.47442E-03" />
+      <nuclide id=" 6000.71c"  ao="4.77597E-02" />
+    </material>
+    <!-- Pyrolytic carbon layer for outer layer -->
+    <material id="OPyC" units="#/barn-cm" temperature="300">
+      <nuclide id="6000.71c"  ao="9.52610E-02" sab="Graph.71t"/>
+      <nuclide id="5010.71c"  ao="2.73795E-08" />
+      <nuclide id="5011.71c"  ao="1.10206E-07" />
+    </material>
+    <!-- Grphite matrix  -->
+    <material id="graphite" units="#/barn-cm" temperature="300">
+      <nuclide id="6000.71c"  ao="8.67377E-02" sab="Graph.71t"/>
+      <nuclide id="5010.71c"  ao="2.49298E-08" />
+      <nuclide id="5011.71c"  ao="1.00345E-07" />
+    </material>
+    <!-- Air -->
+    <material id="air" units="#/barn-cm" temperature="300">
+      <nuclide id=" 7014.71c"  ao="3.89536E-05" />
+      <nuclide id=" 7015.71c"  ao="1.43212E-07" />
+      <nuclide id=" 8016.71c"  ao="1.09134E-05" />
+      <nuclide id=" 8017.71c"  ao="4.13774E-09" />
+      <nuclide id="18036.71c"  ao="7.80084E-10" />
+      <nuclide id="18038.71c"  ao="1.47084E-10" />
+      <nuclide id="18040.71c"  ao="2.32911E-07" />
+      <nuclide id=" 1001.71c"  ao="8.57894E-07" />
+      <nuclide id=" 1002.71c"  ao="1.33629E-07" />
+    </material>
+  </materials>
+
+  <options>
+  	<run_mode>criticality</run_mode>
+    <!--energy_lookup> hash </energy_lookup-->
+    <batch>4</batch>
+    <cycle>500</cycle>
+    <inactive>100</inactive>
+    <particles>10000</particles>
+    <lost_particles>100</lost_particles>
+    <seed> 10829 </seed>
+    <initial_box_source>-0.1 0.1 -0.1 0.1 -1 1</initial_box_source>
+  </options>
+
+  <plots>
+    <plot id="1" color_by="material" basis="xy">
+      <origin>3. 0. 0.</origin>
+      <width> 6.0 6.0 </width>
+      <pixels>3000 3000 </pixels>
+    </plot>
+  </plots>
+  
+</input>

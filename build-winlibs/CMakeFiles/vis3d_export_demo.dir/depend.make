@@ -49,6 +49,7 @@ CMakeFiles/vis3d_export_demo.dir/vis3d_geom_context.mod.stamp: CMakeFiles/vis3d_
 CMakeFiles/vis3d_export_demo.dir/src/vis3d_geom_context.f90.obj.provides.build:
 	$(CMAKE_COMMAND) -E touch CMakeFiles/vis3d_export_demo.dir/src/vis3d_geom_context.f90.obj.provides.build
 CMakeFiles/vis3d_export_demo.dir/build: CMakeFiles/vis3d_export_demo.dir/src/vis3d_geom_context.f90.obj.provides.build
+CMakeFiles/vis3d_export_demo.dir/src/vis3d_host_types.f90.obj: CMakeFiles/vis3d_export_demo.dir/vis3d_constants.mod.stamp
 CMakeFiles/vis3d_export_demo.dir/src/vis3d_host_types.f90.obj: CMakeFiles/vis3d_export_demo.dir/vis3d_kinds.mod.stamp
 CMakeFiles/vis3d_export_demo.dir/src/vis3d_host_types.f90.obj.provides.build: CMakeFiles/vis3d_export_demo.dir/vis3d_host_types.mod.stamp
 CMakeFiles/vis3d_export_demo.dir/vis3d_host_types.mod.stamp: CMakeFiles/vis3d_export_demo.dir/src/vis3d_host_types.f90.obj
@@ -98,10 +99,8 @@ CMakeFiles/vis3d_export_demo.dir/vis3d_sampler_voxel.mod.stamp: CMakeFiles/vis3d
 CMakeFiles/vis3d_export_demo.dir/src/vis3d_sampler_voxel.f90.obj.provides.build:
 	$(CMAKE_COMMAND) -E touch CMakeFiles/vis3d_export_demo.dir/src/vis3d_sampler_voxel.f90.obj.provides.build
 CMakeFiles/vis3d_export_demo.dir/build: CMakeFiles/vis3d_export_demo.dir/src/vis3d_sampler_voxel.f90.obj.provides.build
+CMakeFiles/vis3d_export_demo.dir/src/vis3d_surface_patch.f90.obj: CMakeFiles/vis3d_export_demo.dir/vis3d_host_types.mod.stamp
 CMakeFiles/vis3d_export_demo.dir/src/vis3d_surface_patch.f90.obj: CMakeFiles/vis3d_export_demo.dir/vis3d_kinds.mod.stamp
-CMakeFiles/vis3d_export_demo.dir/src/vis3d_surface_patch.f90.obj: CMakeFiles/vis3d_export_demo.dir/vis3d_surface_quadric.mod.stamp
-CMakeFiles/vis3d_export_demo.dir/src/vis3d_surface_patch.f90.obj: CMakeFiles/vis3d_export_demo.dir/vis3d_surface_rcc.mod.stamp
-CMakeFiles/vis3d_export_demo.dir/src/vis3d_surface_patch.f90.obj: CMakeFiles/vis3d_export_demo.dir/vis3d_surface_trc.mod.stamp
 CMakeFiles/vis3d_export_demo.dir/src/vis3d_surface_patch.f90.obj: CMakeFiles/vis3d_export_demo.dir/vis3d_types.mod.stamp
 CMakeFiles/vis3d_export_demo.dir/src/vis3d_surface_patch.f90.obj.provides.build: CMakeFiles/vis3d_export_demo.dir/vis3d_surface_patch.mod.stamp
 CMakeFiles/vis3d_export_demo.dir/vis3d_surface_patch.mod.stamp: CMakeFiles/vis3d_export_demo.dir/src/vis3d_surface_patch.f90.obj

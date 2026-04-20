@@ -1,0 +1,187 @@
+<input>
+  <geometry>
+    <!-- **************************Surface Card**************************** -->
+    <!-- Structure Geometry -->
+    <surface id="a1" type="x-plane" coeffs="-10.71" />
+    <surface id="a2" type="x-plane" coeffs=" 10.71" />
+    <surface id="a3" type="y-plane" coeffs="-10.71" />
+    <surface id="a4" type="y-plane" coeffs=" 10.71" />
+    <surface id="o1" type="x-plane" coeffs="-10.75" boundary="reflect" />
+    <surface id="o2" type="x-plane" coeffs=" 10.75" boundary="reflect" />
+    <surface id="o3" type="y-plane" coeffs="-10.75" boundary="reflect" />
+    <surface id="o4" type="y-plane" coeffs=" 10.75" boundary="reflect" />
+    <surface id="z1" type="z-plane" coeffs="-100.0" boundary="reflect"/>
+    <surface id="z2" type="z-plane" coeffs=" 100.0" boundary="reflect"/>
+    <pin id="ff">
+      <materials>uo2 he zr h2o</materials>
+      <radii> 0.4096 0.4180 0.4750</radii>
+    </pin>
+    <pin id="gt">
+        <materials>h2o zr h2o</materials>
+        <radii> 0.561 0.602 </radii>
+    </pin>
+    <pin id="it">
+      <materials>h2o zr h2o</materials>
+      <radii> 0.559 0.605 </radii>
+    </pin>
+    <pin id="cr">
+      <materials>aic he ss h2o zr h2o</materials>
+      <radii>0.382 0.386 0.484 0.561 0.602 </radii>
+    </pin>
+    <lattice id="L1" type="rectangular">
+      <pitch> 1.26 1.26 200 </pitch>
+      <dimensions>17 17 1 </dimensions>
+      <lower_left> -10.71 -10.71 -100 </lower_left>
+      <universes>
+        ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+        ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+        ff ff ff ff ff cr ff ff cr ff ff cr ff ff ff ff ff
+        ff ff ff cr ff ff ff ff ff ff ff ff ff cr ff ff ff
+        ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+        ff ff cr ff ff cr ff ff cr ff ff cr ff ff cr ff ff
+        ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+        ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+        ff ff cr ff ff cr ff ff it ff ff cr ff ff cr ff ff
+        ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+        ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+        ff ff cr ff ff cr ff ff cr ff ff cr ff ff cr ff ff
+        ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+        ff ff ff cr ff ff ff ff ff ff ff ff ff cr ff ff ff
+        ff ff ff ff ff cr ff ff cr ff ff cr ff ff ff ff ff
+        ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+        ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+      </universes>
+    </lattice>
+    <cell id="fuel1" fill="L1" zone="a1 -a2 a3 -a4 z1 -z2"/>
+    <cell id="as_gap" material="h2o" zone="(-a1|a2|-a3|a4) o1 -o2 o3 -o4 z1 -z2" />
+    <cell id="out" material="void" zone="-o1|o2|-o3|o4|-z1|z2" imp:n="0" imp:p="0" />
+  </geometry>
+  
+  <materials>
+    <library type="ace" path="../ace_library/xsdir" with_unified_grid="no" />
+    <material id="uo2" units="#/barn-cm" temperature="600">
+      <nuclide id="92234.71c"  ao="6.11864E-06"/>
+      <nuclide id="92235.71c"  ao="7.18132E-04"/>
+      <nuclide id="92236.71c"  ao="3.29861E-06"/>
+      <nuclide id="92238.71c"  ao="2.21546E-02"/>
+      <nuclide id=" 8016.71c"   ao="4.57642E-02"/>
+    </material>
+  
+    <material id="aic" units="#/barn-cm" temperature="600">
+      <nuclide id="47107.71c"  ao="2.36159E-02"/>
+      <nuclide id="47109.71c"  ao="2.19403E-02"/>
+      <nuclide id="48106.71c"  ao="3.41523E-05"/>
+      <nuclide id="48108.71c"  ao="2.43165E-05"/>
+      <nuclide id="48110.71c"  ao="3.41250E-04"/>
+      <nuclide id="48111.71c"  ao="3.49720E-04"/>
+      <nuclide id="48112.71c"  ao="6.59276E-04"/>
+      <nuclide id="48113.71c"  ao="3.33873E-04"/>
+      <nuclide id="48114.71c"  ao="7.84957E-04"/>
+      <nuclide id="48116.71c"  ao="2.04641E-04"/>
+      <nuclide id="49113.71c"  ao="3.44262E-04"/>
+      <nuclide id="49115.71c"  ao="7.68050E-03"/>
+    </material>
+    
+    <material id="he" units="#/barn-cm" temperature="600">
+      <nuclide id="2004.71c" ao="2.68714E-05" />
+    </material>
+
+    <material id="zr" units="#/barn-cm" temperature="600">
+      <nuclide id="40090.71c" ao="2.18865E-02" />
+      <nuclide id="40091.71c" ao="4.77292E-03" />
+      <nuclide id="40092.71c" ao="7.29551E-03" />
+      <nuclide id="40094.71c" ao="7.39335E-03" />
+      <nuclide id="40096.71c" ao="1.19110E-03" />
+      <nuclide id="50112.71c" ao="4.68066E-06" />
+      <nuclide id="50114.71c" ao="3.18478E-06" />
+      <nuclide id="50115.71c" ao="1.64064E-06" />
+      <nuclide id="50116.71c" ao="7.01616E-05" />
+      <nuclide id="50117.71c" ao="3.70592E-05" />
+      <nuclide id="50118.71c" ao="1.16872E-04" />
+      <nuclide id="50119.71c" ao="4.14504E-05" />
+      <nuclide id="50120.71c" ao="1.57212E-04" />
+      <nuclide id="50122.71c" ao="2.23417E-05" />
+      <nuclide id="50124.71c" ao="2.79392E-05" />
+      <nuclide id="26054.71c" ao="8.68307E-06" />
+      <nuclide id="26056.71c" ao="1.36306E-04" />
+      <nuclide id="26057.71c" ao="3.14789E-06" />
+      <nuclide id="26058.71c" ao="4.18926E-07" />
+      <nuclide id="24050.71c" ao="3.30121E-06" />
+      <nuclide id="24052.71c" ao="6.36606E-05" />
+      <nuclide id="24053.71c" ao="7.21860E-06" />
+      <nuclide id="24054.71c" ao="1.79686E-06" />
+      <nuclide id="72174.71c" ao="3.54138E-09" />
+      <nuclide id="72176.71c" ao="1.16423E-07" />
+      <nuclide id="72177.71c" ao="4.11686E-07" />
+      <nuclide id="72178.71c" ao="6.03806E-07" />
+      <nuclide id="72179.71c" ao="3.01460E-07" />
+      <nuclide id="72180.71c" ao="7.76449E-07" />
+    </material>
+  
+    <material id="h2o" units="#/barn-cm" temperature="600">
+      <nuclide id="8016.71c"  ao="2.48112E-02" />
+      <nuclide id="1001.71c"  ao="4.96224E-02" sab="HH2O.71t" />
+      <nuclide id="5010.71c"  ao="1.07070E-05" />
+      <nuclide id="5011.71c"  ao="4.30971E-05" />
+    </material>
+
+    <material id="ss" units="#/barn-cm" temperature="600">
+      <nuclide id=" 6000.71c"  ao="2.36159E-02"/>
+      <nuclide id="14028.71c"  ao="1.58197E-03" />
+      <nuclide id="14029.71c"  ao="8.03653E-05" />
+      <nuclide id="14030.71c"  ao="5.30394E-05" />
+      <nuclide id="15031.71c"  ao="6.99938E-05" />
+      <nuclide id="24050.71c"  ao="7.64915E-04" />
+      <nuclide id="24052.71c"  ao="1.47506E-02" />
+      <nuclide id="24053.71c"  ao="1.67260E-03" />
+      <nuclide id="24054.71c"  ao="4.16346E-04" />
+      <nuclide id="25055.71c"  ao="1.75387E-03" />
+      <nuclide id="26054.71c"  ao="3.44776E-03" />
+      <nuclide id="26056.71c"  ao="5.41225E-02" />
+      <nuclide id="26057.71c"  ao="1.24992E-03" />
+      <nuclide id="26058.71c"  ao="1.66342E-04" />
+      <nuclide id="28058.71c"  ao="5.30854E-03" />
+      <nuclide id="28060.71c"  ao="2.04484E-03" />
+      <nuclide id="28061.71c"  ao="8.88879E-05" />
+      <nuclide id="28062.71c"  ao="2.83413E-04" />
+      <nuclide id="28064.71c"  ao="7.21770E-05" />
+    </material>
+    
+  </materials>
+
+  <options>
+  	<run_mode>criticality</run_mode>
+    <!--energy_lookup> hash </energy_lookup-->
+    <batch>4</batch>
+    <cycle>1000</cycle>
+    <inactive>100</inactive>
+    <particles>10000</particles>
+    <initial_box_source>-0.001 0.001 -0.001 0.001 -0.001 0.001</initial_box_source>
+  </options>
+
+  <meshes>
+    <mesh id="pin_mesh" type="rectangular" widthtype="equal">
+      <n_mesh> 17 17 1 </n_mesh>
+      <lower_left> -10.71 -10.71 -100.0 </lower_left>
+      <width> 1.26 1.26 200.0 </width>
+    </mesh>
+  </meshes>
+
+  <tallies>
+
+    <filter id="allmat" type="material">
+      <bins> uo2  </bins>
+    </filter>
+
+    <tally id="tft69" estimator="tracklength">
+      <filters> allmat </filters>
+      <scores> flux </scores>
+    </tally>
+
+    <shannon_entropy id="se_fine">
+      <mesh_id> pin_mesh </mesh_id>
+    </shannon_entropy>
+
+  </tallies>
+  
+</input>

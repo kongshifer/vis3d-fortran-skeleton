@@ -162,31 +162,50 @@ contains
         integer, intent(in) :: npts, ntris
         real(dp), allocatable :: ptmp(:,:)
         integer, allocatable :: ctmp(:,:), itmp(:)
+        integer :: point_capacity, tri_capacity, target_points, target_tris
+
+        point_capacity = 0
+        if (allocated(self%points)) point_capacity = size(self%points, 2)
+        target_points = point_capacity
+        if (.not. allocated(self%points)) then
+            target_points = max(64, npts)
+        else if (point_capacity < npts) then
+            target_points = max(npts, max(64, 2 * point_capacity))
+        end if
 
         if (.not. allocated(self%points)) then
-            allocate(self%points(3, max(1, npts)))
+            allocate(self%points(3, target_points))
             self%points = 0.0_dp
-        else if (size(self%points,2) < npts) then
-            allocate(ptmp(3, npts)); ptmp = 0.0_dp
+        else if (point_capacity < npts) then
+            allocate(ptmp(3, target_points)); ptmp = 0.0_dp
             ptmp(:,1:self%n_points) = self%points(:,1:self%n_points)
             call move_alloc(ptmp, self%points)
         end if
 
+        tri_capacity = 0
+        if (allocated(self%conn)) tri_capacity = size(self%conn, 2)
+        target_tris = tri_capacity
         if (.not. allocated(self%conn)) then
-            allocate(self%conn(3, max(1, ntris)))
-            allocate(self%cell_id(max(1, ntris)))
-            allocate(self%material_id(max(1, ntris)))
-            allocate(self%surface_id(max(1, ntris)))
-            allocate(self%universe_id(max(1, ntris)))
+            target_tris = max(64, ntris)
+        else if (tri_capacity < ntris) then
+            target_tris = max(ntris, max(64, 2 * tri_capacity))
+        end if
+
+        if (.not. allocated(self%conn)) then
+            allocate(self%conn(3, target_tris))
+            allocate(self%cell_id(target_tris))
+            allocate(self%material_id(target_tris))
+            allocate(self%surface_id(target_tris))
+            allocate(self%universe_id(target_tris))
             self%conn = 0; self%cell_id = -1; self%material_id = -1; self%surface_id = -1; self%universe_id = -1
-        else if (size(self%conn,2) < ntris) then
-            allocate(ctmp(3, ntris)); ctmp = 0
+        else if (tri_capacity < ntris) then
+            allocate(ctmp(3, target_tris)); ctmp = 0
             ctmp(:,1:self%n_tris) = self%conn(:,1:self%n_tris)
             call move_alloc(ctmp, self%conn)
-            allocate(itmp(ntris)); itmp = -1; itmp(1:self%n_tris) = self%cell_id(1:self%n_tris); call move_alloc(itmp, self%cell_id)
-            allocate(itmp(ntris)); itmp = -1; itmp(1:self%n_tris) = self%material_id(1:self%n_tris); call move_alloc(itmp, self%material_id)
-            allocate(itmp(ntris)); itmp = -1; itmp(1:self%n_tris) = self%surface_id(1:self%n_tris); call move_alloc(itmp, self%surface_id)
-            allocate(itmp(ntris)); itmp = -1; itmp(1:self%n_tris) = self%universe_id(1:self%n_tris); call move_alloc(itmp, self%universe_id)
+            allocate(itmp(target_tris)); itmp = -1; itmp(1:self%n_tris) = self%cell_id(1:self%n_tris); call move_alloc(itmp, self%cell_id)
+            allocate(itmp(target_tris)); itmp = -1; itmp(1:self%n_tris) = self%material_id(1:self%n_tris); call move_alloc(itmp, self%material_id)
+            allocate(itmp(target_tris)); itmp = -1; itmp(1:self%n_tris) = self%surface_id(1:self%n_tris); call move_alloc(itmp, self%surface_id)
+            allocate(itmp(target_tris)); itmp = -1; itmp(1:self%n_tris) = self%universe_id(1:self%n_tris); call move_alloc(itmp, self%universe_id)
         end if
     end subroutine reserve
 

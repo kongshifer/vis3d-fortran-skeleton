@@ -1,6 +1,6 @@
 
 module vis3d_input_mcx
-    use vis3d_constants, only: VIS3D_TAG
+    use vis3d_constants, only: VIS3D_TAG, VIS3D_MODE_SURFACE, VIS3D_FMT_VTP
     use vis3d_types, only: vis3d_config_t
     use vis3d_input_common, only: vis3d_read_config
     implicit none
@@ -35,12 +35,39 @@ contains
 
         if (size(lines) == 0) then
             cfg = vis3d_config_t()
-            cfg%enabled = .false.
+            cfg%enabled = .true.
+            cfg%mode = VIS3D_MODE_SURFACE
+            cfg%format = VIS3D_FMT_VTP
+            cfg%output = default_output_path(filename, 'vtp')
+            cfg%fields%surface_id = .true.
+            cfg%fields%lattice_id = .true.
+            cfg%surface_quality = 2
+            call cfg%normalize()
             return
         end if
 
         call vis3d_read_config(lines, 'mcx', cfg, ierr)
     contains
+        function default_output_path(filename, ext) result(out)
+            character(len=*), intent(in) :: filename, ext
+            character(len=256) :: out
+            integer :: i, last_sep, last_dot
+
+            out = trim(filename)
+            last_sep = 0
+            last_dot = 0
+            do i = 1, len_trim(filename)
+                if (filename(i:i) == '\' .or. filename(i:i) == '/') last_sep = i
+                if (filename(i:i) == '.') last_dot = i
+            end do
+
+            if (last_dot > last_sep) then
+                out = trim(filename(:last_dot-1)) // '.' // trim(ext)
+            else
+                out = trim(filename) // '.' // trim(ext)
+            end if
+        end function default_output_path
+
         logical function is_vis3d_comment_mcx(line, payload)
             character(len=*), intent(in) :: line
             character(len=*), intent(out) :: payload

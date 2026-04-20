@@ -1,0 +1,84 @@
+<input>
+  <geometry>
+    <surface id = "1" type = "cylinder-z" coeffs = "0.0 0.0 0.4096"/>
+    <surface id = "2" type = "cylinder-z" coeffs = "0.0 0.0 0.418"/>
+    <surface id = "3" type = "cylinder-z" coeffs = "0.0 0.0 0.475"/>
+    <surface id = "4" type = "plane-x" coeffs = "-0.63" boundary="reflective"/>
+    <surface id = "5" type = "plane-x" coeffs = "0.63" boundary="reflective"/>
+    <surface id = "6" type = "plane-y" coeffs = "-0.63" boundary="reflective"/>
+    <surface id = "7" type = "plane-y" coeffs = "0.63" boundary="reflective"/>
+    <surface id = "8" type = "plane-z" coeffs = "-0.5" boundary="reflective"/>
+    <surface id = "9" type = "plane-z" coeffs = "0.5" boundary="reflective"/>
+
+    <cell id = "1" material = "1" zone = "-1 8 -9"/>
+    <cell id = "2" material = "2" zone = "1 -2 8 -9"/>
+    <cell id = "3" material = "3" zone = "2 -3 8 -9"/>
+    <cell id = "4" material = "4" zone = "3 4 -5 6 -7 8 -9"/>
+  </geometry>
+
+  <materials>
+    <library type ="ace" path = "../ace_library/xsdir" with_unified_grid = "no"/>
+    
+    <material id = "1" units="#/barn-cm" temperature = "600">
+			<nuclide id =  "8016.71c" ao = "4.57642E-02"/>
+      <nuclide id = "92234.71c" ao = "6.11864E-06"/>
+      <nuclide id = "92235.71c" ao = "7.18132E-04"/>
+      <nuclide id = "92236.71c" ao = "3.29861E-06"/>
+      <nuclide id = "92238.71c" ao = "2.21546E-02"/>
+		</material>
+
+    <material id = "2" units="#/barn-cm" temperature = "600">
+			<nuclide id = "2004.71c" ao = "2.68714E-05"/>
+		</material>
+
+    <material id = "3" units="#/barn-cm" temperature = "600">
+			<nuclide id = "24050.71c" ao = "3.30121E-06"/>
+      <nuclide id = "24052.71c" ao = "6.36606E-05"/>
+      <nuclide id = "24053.71c" ao = "7.21860E-06"/>
+      <nuclide id = "24054.71c" ao = "1.79686E-06"/>
+      <nuclide id = "26054.71c" ao = "8.68307E-06"/>
+      <nuclide id = "26056.71c" ao = "1.36306E-04"/>
+      <nuclide id = "26057.71c" ao = "3.14789E-06"/>
+      <nuclide id = "26058.71c" ao = "4.18926E-07"/>
+      <nuclide id = "40090.71c" ao = "2.18865E-02"/>
+      <nuclide id = "40091.71c" ao = "4.77292E-03"/>
+      <nuclide id = "40092.71c" ao = "7.29551E-03"/>
+      <nuclide id = "40094.71c" ao = "7.39335E-03"/>
+      <nuclide id = "40096.71c" ao = "1.19110E-03"/>
+      <nuclide id = "50112.71c" ao = "4.68066E-06"/>
+      <nuclide id = "50114.71c" ao = "3.18478E-06"/>
+      <nuclide id = "50115.71c" ao = "1.64064E-06"/>
+      <nuclide id = "50116.71c" ao = "7.01616E-05"/>
+      <nuclide id = "50117.71c" ao = "3.70592E-05"/>
+      <nuclide id = "50118.71c" ao = "1.16872E-04"/>
+      <nuclide id = "50119.71c" ao = "4.14504E-05"/>
+      <nuclide id = "50120.71c" ao = "1.57212E-04"/>
+      <nuclide id = "50122.71c" ao = "2.23417E-05"/>
+      <nuclide id = "50124.71c" ao = "2.79392E-05"/>
+      <nuclide id = "72174.71c" ao = "3.54138E-09"/>
+      <nuclide id = "72176.71c" ao = "1.16423E-07"/>
+      <nuclide id = "72177.71c" ao = "4.11686E-07"/>
+      <nuclide id = "72178.71c" ao = "6.03806E-07"/>
+      <nuclide id = "72179.71c" ao = "3.01460E-07"/>
+      <nuclide id = "72180.71c" ao = "7.76449E-07"/>
+		</material>
+
+    <material id = "4" units="#/barn-cm" temperature = "600">
+			<nuclide id = "1001.71c" ao = "4.41459E-02" sab="HH2O.71t"/>
+      <nuclide id = "5010.71c" ao = "9.52537E-06"/>
+      <nuclide id = "5011.71c" ao = "3.83408E-05"/>
+      <nuclide id = "8016.71c" ao = "2.20729E-02"/>
+		</material>
+  </materials>
+
+  <options>
+    <particles>2000</particles>
+    <run_mode>criticality</run_mode>
+    <particle_type>n</particle_type>
+    <cycle>110</cycle>
+    <inactive>10</inactive>
+    <initial_box_source>
+      -0.4096 0.4096 -0.4096 0.4096 -0.49 0.49
+    </initial_box_source>
+  </options>
+</input>
