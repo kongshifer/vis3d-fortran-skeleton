@@ -2,42 +2,33 @@
 
 ## 1. 适用范围
 
-本程序当前主要用于把一批 MCX XML 输入卡中的几何导出为 VTK 文件，便于在 ParaView 等工具中查看。
+本程序用于把 MCX / MCNP 输入卡中的几何模型转换成 ParaView 可读取的 VTK 文件。
 
-当前已验证可直接导出的示例：
+当前重点支持：
 
-- `pool.xml`
-- `2G.xml`
-- `VERA_1b.xml`
-- `c5g7.xml`
-- `pebble.xml`
+- MCX XML 几何
+- MCNP 输入卡中的常见 CSG 几何子集
 
 ## 2. 输出格式
 
 当前支持：
 
 - `VTP`
-  表面三角网格，当前 MCX XML 默认导出格式
+  表面三角网格
 - `VTU`
-  非结构网格三角单元输出
+  非结构网格三角单元
 - `VTI`
-  体素采样输出
-
-如果输入 XML 没有显式 `@VIS3D` 指令，程序当前默认：
-
-- `MODE = SURFACE`
-- `FORMAT = VTP`
-- 输出文件名为输入文件同名 `.vtp`
+  规则体素采样结果
 
 ## 3. 构建
 
-### Windows 当前已验证方式
+### Windows 当前验证方式
 
-当前仓库已验证可用的构建目录是：
+当前仓库已经验证可用的构建目录是：
 
 - `build-winlibs/`
 
-如果需要重新编译：
+如需重新构建：
 
 ```powershell
 cmake -S . -B build-winlibs -G "MinGW Makefiles" `
@@ -48,7 +39,7 @@ cmake -S . -B build-winlibs -G "MinGW Makefiles" `
 cmake --build build-winlibs -j 4
 ```
 
-可执行文件路径：
+可执行文件：
 
 - `build-winlibs/vis3d_export_demo.exe`
 
@@ -62,70 +53,114 @@ cmake --build build-winlibs -j 4
 
 ```powershell
 .\build-winlibs\vis3d_export_demo.exe .\validation\mcx_examples\pool.xml mcx
+.\build-winlibs\vis3d_export_demo.exe .\validation\mcnp_examples\angle\inp mcnp
 ```
 
 执行成功后，会在输入文件同目录下生成对应的 VTK 文件。
 
-## 5. 输入要求
+## 5. MCX 默认行为
 
-### MCX XML
+如果输入是普通 MCX XML，且没有显式 `@VIS3D` 指令，默认：
 
-当前支持的主要几何元素：
+- `MODE = SURFACE`
+- `FORMAT = VTP`
+- 输出文件为输入文件同名 `.vtp`
 
-- `<surface>`：
-  - `x-plane / plane-x`
-  - `y-plane / plane-y`
-  - `z-plane / plane-z`
-  - `cylinder-z`
-  - `sphere`
-- `<cell>`
-- `<pin>`
-- `<particle>`
-- `<lattice type="rectangular">`
+当前已验证的 MCX XML 示例：
 
-当前支持的 `zone` 表达式子集：
+- `pool.xml`
+- `2G.xml`
+- `VERA_1b.xml`
+- `c5g7.xml`
+- `pebble.xml`
 
-- 盒体区：`a1 -a2 a3 -a4 z1 -z2`
-- 圆柱或球壳区：`-1 8 -9`、`surf1`、`-surf2`
-- 矩形外环：`(-a1|a2|-a3|a4) o1 -o2 o3 -o4 z1 -z2`
-- 盒体差集：`((x0 -x1 y0 -y1)~(x2 -x3 y2 -y3)) z0 -z1`
+## 6. MCNP 默认行为
 
-## 6. 回归验证
+如果输入是 MCNP 卡，且没有显式 `c @VIS3D` 指令，默认：
 
-项目内已经准备好 validation 脚本：
+- `MODE = VOXEL`
+- `FORMAT = VTI`
+- 输出文件为输入文件同名 `.vti`
+
+当前这样设计是因为 MCNP 的通用 CSG 布尔区更适合先通过点查询走体素导出。
+
+### 当前支持的 MCNP surface 类型
+
+- `PX` / `PY` / `PZ`
+- `CX` / `CY` / `CZ`
+- `C/X` / `C/Y` / `C/Z`
+- `S`
+
+### 当前支持的 MCNP 几何表达式子集
+
+- 空格隐式交
+- `:` 并
+- `#n` 单元补
+- `#(...)` 区域补
+- 括号分组
+
+### 当前已验证的 MCNP 示例
+
+- `validation/mcnp_examples/angle/inp`
+- `validation/mcnp_examples/point_ring_detector/inpdet`
+
+## 7. `@VIS3D` 指令
+
+MCX / MCNP 都支持通过注释携带 `@VIS3D` 配置。
+
+MCNP 侧使用 MCNP 风格注释，例如：
+
+```text
+c @VIS3D MODE=VOXEL
+c @VIS3D FORMAT=VTI
+c @VIS3D DIM=128,128,128
+```
+
+如果没有这些注释，程序会回落到各自的默认策略。
+
+## 8. Validation
+
+### MCX
+
+运行：
 
 ```powershell
 .\validation\run_mcx_examples.ps1
 ```
 
-脚本会自动运行下面这些样例：
+如果当前 PowerShell 禁止直接执行脚本，可改用：
 
-- `validation/mcx_examples/pool.xml`
-- `validation/mcx_examples/2G.xml`
-- `validation/mcx_examples/VERA_1b.xml`
-- `validation/mcx_examples/c5g7.xml`
-- `validation/mcx_examples/pebble.xml`
+```powershell
+powershell -ExecutionPolicy Bypass -File .\validation\run_mcx_examples.ps1
+```
 
-并在同目录下生成：
+### MCNP
 
-- `pool.vtp`
-- `2G.vtp`
-- `VERA_1b.vtp`
-- `c5g7.vtp`
-- `pebble.vtp`
+运行：
 
-## 7. 可视化查看
+```powershell
+.\validation\run_mcnp_examples.ps1
+```
 
-推荐用 ParaView 打开生成的 `.vtp/.vtu/.vti` 文件。
+如果当前 PowerShell 禁止直接执行脚本，可改用：
 
-常见查看方式：
+```powershell
+powershell -ExecutionPolicy Bypass -File .\validation\run_mcnp_examples.ps1
+```
 
-- 按 `material_id` 着色
-- 按 `cell_id` 着色
-- 对大模型使用 `Surface With Edges` 快速检查网格结构
+MCNP 回归脚本除了检查输出文件是否生成，还会解析 `VTI` 中的 `cell_id` 字段，确认示例里的关键单元确实被识别出来。
 
-## 8. 当前限制说明
+## 9. ParaView 查看建议
 
-- `pebble.xml` 中的 `packing` 目前不是随机排布重建，只是输出可解析的球层/容器几何
-- 当前表面导出未做几何裁剪去重，某些组合区域可能有重叠面片
-- 如果后续新增几何语法或调整命令行行为，本文件会同步更新
+推荐查看方式：
+
+- 按 `cell_id` 着色，先检查几何分区是否正确
+- 按 `material_id` 着色，检查材料分布
+- 对体素结果使用 `Slice` / `Clip`，快速检查内部结构
+- 对表面结果使用 `Surface With Edges`，观察网格质量
+
+## 10. 当前限制
+
+- MCNP 当前主要保证 `VTI` 路径，不保证通用 `VTP/VTU` 表面重建
+- 复杂 MCNP 高级特性还未全面接入
+- 当前 `VTI` 为 ASCII XML，较大模型的输出文件会偏大

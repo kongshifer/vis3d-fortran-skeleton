@@ -1,26 +1,21 @@
 # vis3d Fortran exporter
 
-这是一个基于 Fortran 2003 的 VIS3D 导出器项目，当前重点是把 MCX XML 输入卡中的几何转换为 VTK 文件，便于在 ParaView 中检查模型。
+这是一个基于 Fortran 2003 的 VIS3D 导出器项目，目标是把 MCX / MCNP 输入卡中的 CSG 几何转换成 ParaView 可读取的 VTK 文件。
+
+当前已经打通两条主路径：
+
+- MCX XML 几何导出
+  - 默认输出表面网格 `VTP`
+  - 支持 `VTP` / `VTU` / `VTI`
+- MCNP 输入卡几何导出
+  - 当前默认输出体素 `VTI`
+  - 已覆盖 `PX/PY/PZ`、`CX/CY/CZ`、`C/X C/Y C/Z`、`S` 和常见布尔区表达式子集
 
 ## 文档入口
 
 - 开发文档：[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)
 - 使用文档：[docs/USAGE.md](docs/USAGE.md)
-- 验证说明：[validation/README.md](validation/README.md)
-
-## 当前能力
-
-- 读取 MCX XML 输入
-- 默认导出表面 `VTP`
-- 支持 `VTI`、`VTP`、`VTU`
-- 已覆盖一批 MCX 示例中的常见几何：
-  - plane box region
-  - `cylinder-z`
-  - `sphere`
-  - `pin`
-  - `particle`
-  - `rectangular lattice`
-  - `universe` 递归 `fill`
+- Validation 说明：[validation/README.md](validation/README.md)
 
 ## 快速构建
 
@@ -33,4 +28,5 @@ cmake --build build-winlibs -j 4
 
 ```powershell
 .\validation\run_mcx_examples.ps1
+.\validation\run_mcnp_examples.ps1
 ```

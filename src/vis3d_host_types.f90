@@ -1,6 +1,6 @@
 module vis3d_host_types
     use vis3d_kinds, only: dp
-    use vis3d_constants, only: VIS3D_SYNTAX_MCX, lowercase
+    use vis3d_constants, only: VIS3D_SYNTAX_MCX, VIS3D_SYNTAX_MCNP, lowercase
     implicit none
     private
     public :: geometry_model_t
@@ -14,6 +14,14 @@ module vis3d_host_types
     integer, parameter :: LINE_LEN = 4096
     integer, parameter :: UNIT_KIND_CYLINDER = 1
     integer, parameter :: UNIT_KIND_SPHERE = 2
+    integer, parameter :: MCNP_SURFACE_PLANE = 1
+    integer, parameter :: MCNP_SURFACE_CYLINDER = 2
+    integer, parameter :: MCNP_SURFACE_SPHERE = 3
+    integer, parameter :: MCNP_EXPR_SURFACE = 1
+    integer, parameter :: MCNP_EXPR_CELL = 2
+    integer, parameter :: MCNP_EXPR_NOT = 3
+    integer, parameter :: MCNP_EXPR_AND = 4
+    integer, parameter :: MCNP_EXPR_OR = 5
     real(dp), parameter :: REGION_BIG = huge(1.0_dp) / 16.0_dp
 
     type :: box_primitive_t
@@ -67,6 +75,27 @@ module vis3d_host_types
         real(dp) :: xc = 0.0_dp, yc = 0.0_dp, zc = 0.0_dp, radius = 0.0_dp
     end type sphere_surface_t
 
+    type :: mcnp_surface_t
+        integer :: id = 0
+        integer :: kind = 0
+        integer :: axis = 0
+        real(dp) :: value = 0.0_dp
+        real(dp) :: center(3) = 0.0_dp
+        real(dp) :: radius = 0.0_dp
+    end type mcnp_surface_t
+
+    type :: mcnp_expr_t
+        integer, allocatable :: kind(:)
+        integer, allocatable :: ival(:)
+    end type mcnp_expr_t
+
+    type :: mcnp_cell_t
+        integer :: id = 0
+        integer :: material_id = 0
+        character(len=LINE_LEN) :: expr_text = ''
+        type(mcnp_expr_t) :: expr
+    end type mcnp_cell_t
+
     type :: unit_def_t
         character(len=NAME_LEN) :: id = ''
         integer :: kind = 0
@@ -112,10 +141,13 @@ module vis3d_host_types
         integer :: n_cells = 0
         integer :: n_surfaces = 0
         integer :: n_materials = 0
+        logical :: is_mcnp = .false.
         real(dp) :: bbox(6) = [0.0_dp, 0.0_dp, 0.0_dp, 0.0_dp, 0.0_dp, 0.0_dp]
         type(box_primitive_t), allocatable :: boxes(:)
         type(cylinder_primitive_t), allocatable :: cylinders(:)
         type(sphere_primitive_t), allocatable :: spheres(:)
+        type(mcnp_surface_t), allocatable :: mcnp_surfaces(:)
+        type(mcnp_cell_t), allocatable :: mcnp_cells(:)
     end type geometry_model_t
 
 contains
@@ -130,6 +162,11 @@ contains
 
         if (syntax_kind == VIS3D_SYNTAX_MCX .or. is_xml_file(input_file)) then
             call geometry_build_from_mcx_xml(input_file, model, ierr)
+            return
+        end if
+
+        if (syntax_kind == VIS3D_SYNTAX_MCNP) then
+            call geometry_build_from_mcnp_input(input_file, model, ierr)
             return
         end if
 
@@ -148,6 +185,11 @@ contains
         universe_id = 0
         lattice_id = -1
         instance_id = 0
+
+        if (model%is_mcnp) then
+            call geometry_point_query_mcnp(model, x, y, z, cell_id, material_id)
+            return
+        end if
 
         do i = 1, size(model%boxes)
             if (point_in_box(model%boxes(i), x, y, z)) then
@@ -303,6 +345,569 @@ contains
             end if
         end function maxval_default
     end subroutine geometry_build_from_mcx_xml
+
+    subroutine geometry_build_from_mcnp_input(filename, model, ierr)
+        character(len=*), intent(in) :: filename
+        type(geometry_model_t), intent(inout) :: model
+        integer, intent(out) :: ierr
+
+        character(len=LINE_LEN), allocatable :: cell_cards(:), surface_cards(:)
+        type(mcnp_surface_t), allocatable :: surfaces(:)
+        type(mcnp_cell_t), allocatable :: cells(:)
+        integer :: i, max_material_id
+        type(mcnp_surface_t) :: surface
+        type(mcnp_cell_t) :: cell
+
+        ierr = 0
+        max_material_id = 0
+        allocate(cell_cards(0), surface_cards(0), surfaces(0), cells(0))
+
+        call read_mcnp_blocks(filename, cell_cards, surface_cards, ierr)
+        if (ierr /= 0) return
+
+        do i = 1, size(surface_cards)
+            call parse_mcnp_surface_card(surface_cards(i), surface, ierr)
+            if (ierr /= 0) then
+                write(*,'(A,A)') 'VIS3D geometry error: unsupported MCNP surface card: ', trim(surface_cards(i))
+                return
+            end if
+            call append_mcnp_surface(surfaces, surface)
+        end do
+
+        do i = 1, size(cell_cards)
+            call parse_mcnp_cell_card(cell_cards(i), cell, ierr)
+            if (ierr /= 0) then
+                write(*,'(A,A)') 'VIS3D geometry error: unsupported MCNP cell card: ', trim(cell_cards(i))
+                return
+            end if
+            max_material_id = max(max_material_id, max(0, cell%material_id))
+            call append_mcnp_cell(cells, cell)
+        end do
+
+        call estimate_mcnp_bbox(surfaces, model%bbox)
+        model%is_mcnp = .true.
+        call move_alloc(surfaces, model%mcnp_surfaces)
+        call move_alloc(cells, model%mcnp_cells)
+        model%n_cells = size(model%mcnp_cells)
+        model%n_materials = max_material_id
+        model%n_surfaces = size(model%mcnp_surfaces)
+    end subroutine geometry_build_from_mcnp_input
+
+    subroutine geometry_point_query_mcnp(model, x, y, z, cell_id, material_id)
+        type(geometry_model_t), intent(in) :: model
+        real(dp), intent(in) :: x, y, z
+        integer, intent(out) :: cell_id, material_id
+        integer :: i
+
+        cell_id = -1
+        material_id = -1
+
+        do i = 1, size(model%mcnp_cells)
+            if (mcnp_point_in_cell_index(model, i, x, y, z, 0)) then
+                cell_id = model%mcnp_cells(i)%id
+                material_id = model%mcnp_cells(i)%material_id
+                return
+            end if
+        end do
+    end subroutine geometry_point_query_mcnp
+
+    recursive logical function mcnp_point_in_cell_index(model, idx, x, y, z, depth) result(in_cell)
+        type(geometry_model_t), intent(in) :: model
+        integer, intent(in) :: idx, depth
+        real(dp), intent(in) :: x, y, z
+
+        logical, allocatable :: stack(:)
+        integer :: i, top, ref_idx
+
+        in_cell = .false.
+        if (depth > 32) return
+        if (idx < 1 .or. idx > size(model%mcnp_cells)) return
+
+        allocate(stack(max(1, size(model%mcnp_cells(idx)%expr%kind))))
+        top = 0
+
+        do i = 1, size(model%mcnp_cells(idx)%expr%kind)
+            select case (model%mcnp_cells(idx)%expr%kind(i))
+            case (MCNP_EXPR_SURFACE)
+                top = top + 1
+                stack(top) = mcnp_eval_surface(model, model%mcnp_cells(idx)%expr%ival(i), x, y, z)
+            case (MCNP_EXPR_CELL)
+                ref_idx = find_mcnp_cell_index(model%mcnp_cells, model%mcnp_cells(idx)%expr%ival(i))
+                top = top + 1
+                if (ref_idx > 0) then
+                    stack(top) = mcnp_point_in_cell_index(model, ref_idx, x, y, z, depth + 1)
+                else
+                    stack(top) = .false.
+                end if
+            case (MCNP_EXPR_NOT)
+                if (top < 1) return
+                stack(top) = .not. stack(top)
+            case (MCNP_EXPR_AND)
+                if (top < 2) return
+                stack(top-1) = stack(top-1) .and. stack(top)
+                top = top - 1
+            case (MCNP_EXPR_OR)
+                if (top < 2) return
+                stack(top-1) = stack(top-1) .or. stack(top)
+                top = top - 1
+            case default
+                return
+            end select
+        end do
+
+        if (top == 1) in_cell = stack(1)
+    end function mcnp_point_in_cell_index
+
+    logical function mcnp_eval_surface(model, signed_surface_id, x, y, z)
+        type(geometry_model_t), intent(in) :: model
+        integer, intent(in) :: signed_surface_id
+        real(dp), intent(in) :: x, y, z
+
+        integer :: idx, sid
+        real(dp) :: dist2
+
+        sid = abs(signed_surface_id)
+        idx = find_mcnp_surface_index(model%mcnp_surfaces, sid)
+        if (idx <= 0) then
+            mcnp_eval_surface = .false.
+            return
+        end if
+
+        select case (model%mcnp_surfaces(idx)%kind)
+        case (MCNP_SURFACE_PLANE)
+            select case (model%mcnp_surfaces(idx)%axis)
+            case (1)
+                if (signed_surface_id < 0) then
+                    mcnp_eval_surface = x <= model%mcnp_surfaces(idx)%value + 1.0e-9_dp
+                else
+                    mcnp_eval_surface = x >= model%mcnp_surfaces(idx)%value - 1.0e-9_dp
+                end if
+            case (2)
+                if (signed_surface_id < 0) then
+                    mcnp_eval_surface = y <= model%mcnp_surfaces(idx)%value + 1.0e-9_dp
+                else
+                    mcnp_eval_surface = y >= model%mcnp_surfaces(idx)%value - 1.0e-9_dp
+                end if
+            case default
+                if (signed_surface_id < 0) then
+                    mcnp_eval_surface = z <= model%mcnp_surfaces(idx)%value + 1.0e-9_dp
+                else
+                    mcnp_eval_surface = z >= model%mcnp_surfaces(idx)%value - 1.0e-9_dp
+                end if
+            end select
+        case (MCNP_SURFACE_CYLINDER)
+            select case (model%mcnp_surfaces(idx)%axis)
+            case (1)
+                dist2 = (y - model%mcnp_surfaces(idx)%center(2))**2 + (z - model%mcnp_surfaces(idx)%center(3))**2
+            case (2)
+                dist2 = (x - model%mcnp_surfaces(idx)%center(1))**2 + (z - model%mcnp_surfaces(idx)%center(3))**2
+            case default
+                dist2 = (x - model%mcnp_surfaces(idx)%center(1))**2 + (y - model%mcnp_surfaces(idx)%center(2))**2
+            end select
+            if (signed_surface_id < 0) then
+                mcnp_eval_surface = dist2 <= model%mcnp_surfaces(idx)%radius**2 + 1.0e-9_dp
+            else
+                mcnp_eval_surface = dist2 >= model%mcnp_surfaces(idx)%radius**2 - 1.0e-9_dp
+            end if
+        case (MCNP_SURFACE_SPHERE)
+            dist2 = (x - model%mcnp_surfaces(idx)%center(1))**2 + (y - model%mcnp_surfaces(idx)%center(2))**2 + &
+                    (z - model%mcnp_surfaces(idx)%center(3))**2
+            if (signed_surface_id < 0) then
+                mcnp_eval_surface = dist2 <= model%mcnp_surfaces(idx)%radius**2 + 1.0e-9_dp
+            else
+                mcnp_eval_surface = dist2 >= model%mcnp_surfaces(idx)%radius**2 - 1.0e-9_dp
+            end if
+        case default
+            mcnp_eval_surface = .false.
+        end select
+    end function mcnp_eval_surface
+
+    subroutine read_mcnp_blocks(filename, cell_cards, surface_cards, ierr)
+        character(len=*), intent(in) :: filename
+        character(len=LINE_LEN), allocatable, intent(out) :: cell_cards(:), surface_cards(:)
+        integer, intent(out) :: ierr
+
+        character(len=LINE_LEN), allocatable :: lines(:)
+        character(len=LINE_LEN) :: line
+        integer :: i, section
+
+        ierr = 0
+        allocate(cell_cards(0), surface_cards(0))
+        call read_all_lines(filename, lines, ierr)
+        if (ierr /= 0) return
+        if (size(lines) == 0) then
+            ierr = 1
+            return
+        end if
+
+        section = 0
+        do i = 2, size(lines)
+            line = lines(i)
+            call strip_inline_comment(line)
+            if (len_trim(adjustl(line)) == 0) then
+                if (section < 2) section = section + 1
+                cycle
+            end if
+            if (is_mcnp_comment(line)) cycle
+
+            select case (section)
+            case (0)
+                call append_mcnp_card_line(cell_cards, line)
+            case (1)
+                call append_mcnp_card_line(surface_cards, line)
+            case default
+                cycle
+            end select
+        end do
+    end subroutine read_mcnp_blocks
+
+    subroutine parse_mcnp_surface_card(card, surface, ierr)
+        character(len=*), intent(in) :: card
+        type(mcnp_surface_t), intent(out) :: surface
+        integer, intent(out) :: ierr
+
+        character(len=NAME_LEN), allocatable :: tokens(:)
+        character(len=NAME_LEN) :: mnemonic
+        real(dp), allocatable :: params(:)
+
+        ierr = 0
+        surface = mcnp_surface_t()
+        call split_blank_tokens(card, tokens)
+        if (size(tokens) < 3) then
+            ierr = 1
+            return
+        end if
+
+        read(tokens(1), *, iostat=ierr) surface%id
+        if (ierr /= 0) return
+        mnemonic = lowercase(trim(tokens(2)))
+        call tokens_to_real_array(tokens, 3, params, ierr)
+        if (ierr /= 0) return
+
+        select case (trim(mnemonic))
+        case ('px')
+            surface%kind = MCNP_SURFACE_PLANE
+            surface%axis = 1
+            surface%value = params(1)
+        case ('py')
+            surface%kind = MCNP_SURFACE_PLANE
+            surface%axis = 2
+            surface%value = params(1)
+        case ('pz')
+            surface%kind = MCNP_SURFACE_PLANE
+            surface%axis = 3
+            surface%value = params(1)
+        case ('cx')
+            surface%kind = MCNP_SURFACE_CYLINDER
+            surface%axis = 1
+            surface%radius = params(1)
+        case ('cy')
+            surface%kind = MCNP_SURFACE_CYLINDER
+            surface%axis = 2
+            surface%radius = params(1)
+        case ('cz')
+            surface%kind = MCNP_SURFACE_CYLINDER
+            surface%axis = 3
+            surface%radius = params(1)
+        case ('c/x')
+            if (size(params) < 3) then
+                ierr = 1
+                return
+            end if
+            surface%kind = MCNP_SURFACE_CYLINDER
+            surface%axis = 1
+            surface%center(2) = params(1)
+            surface%center(3) = params(2)
+            surface%radius = params(3)
+        case ('c/y')
+            if (size(params) < 3) then
+                ierr = 1
+                return
+            end if
+            surface%kind = MCNP_SURFACE_CYLINDER
+            surface%axis = 2
+            surface%center(1) = params(1)
+            surface%center(3) = params(2)
+            surface%radius = params(3)
+        case ('c/z')
+            if (size(params) < 3) then
+                ierr = 1
+                return
+            end if
+            surface%kind = MCNP_SURFACE_CYLINDER
+            surface%axis = 3
+            surface%center(1) = params(1)
+            surface%center(2) = params(2)
+            surface%radius = params(3)
+        case ('s')
+            if (size(params) < 4) then
+                ierr = 1
+                return
+            end if
+            surface%kind = MCNP_SURFACE_SPHERE
+            surface%center = params(1:3)
+            surface%radius = params(4)
+        case default
+            ierr = 1
+        end select
+    end subroutine parse_mcnp_surface_card
+
+    subroutine parse_mcnp_cell_card(card, cell, ierr)
+        character(len=*), intent(in) :: card
+        type(mcnp_cell_t), intent(out) :: cell
+        integer, intent(out) :: ierr
+
+        character(len=NAME_LEN), allocatable :: tokens(:)
+        character(len=LINE_LEN) :: expr_text
+        integer :: i, start_idx
+
+        ierr = 0
+        cell = mcnp_cell_t()
+        call split_blank_tokens(card, tokens)
+        if (size(tokens) < 3) then
+            ierr = 1
+            return
+        end if
+
+        read(tokens(1), *, iostat=ierr) cell%id
+        if (ierr /= 0) return
+        read(tokens(2), *, iostat=ierr) cell%material_id
+        if (ierr /= 0) return
+
+        start_idx = 3
+        if (cell%material_id /= 0) start_idx = 4
+        if (start_idx > size(tokens)) then
+            ierr = 1
+            return
+        end if
+
+        expr_text = ''
+        do i = start_idx, size(tokens)
+            if (index(tokens(i), '=') > 0) exit
+            if (len_trim(expr_text) > 0) then
+                expr_text = trim(expr_text) // ' ' // trim(tokens(i))
+            else
+                expr_text = trim(tokens(i))
+            end if
+        end do
+
+        cell%expr_text = trim(expr_text)
+        call compile_mcnp_expression(cell%expr_text, cell%expr, ierr)
+    end subroutine parse_mcnp_cell_card
+
+    subroutine compile_mcnp_expression(text_in, expr, ierr)
+        character(len=*), intent(in) :: text_in
+        type(mcnp_expr_t), intent(out) :: expr
+        integer, intent(out) :: ierr
+
+        character(len=LINE_LEN) :: text
+        integer :: pos, n
+
+        ierr = 0
+        allocate(expr%kind(0), expr%ival(0))
+        text = trim(adjustl(text_in))
+        n = len_trim(text)
+        pos = 1
+
+        call parse_union()
+        call skip_spaces()
+        if (ierr == 0 .and. pos <= n) ierr = 1
+    contains
+        recursive subroutine parse_union()
+            if (ierr /= 0) return
+            call parse_intersection()
+            do
+                call skip_spaces()
+                if (pos > n) exit
+                if (text(pos:pos) /= ':') exit
+                pos = pos + 1
+                call parse_intersection()
+                if (ierr /= 0) return
+                call append_expr_token(expr, MCNP_EXPR_OR, 0)
+            end do
+        end subroutine parse_union
+
+        recursive subroutine parse_intersection()
+            if (ierr /= 0) return
+            call parse_factor()
+            do
+                call skip_spaces()
+                if (.not. starts_factor()) exit
+                call parse_factor()
+                if (ierr /= 0) return
+                call append_expr_token(expr, MCNP_EXPR_AND, 0)
+            end do
+        end subroutine parse_intersection
+
+        recursive subroutine parse_factor()
+            integer :: value
+
+            if (ierr /= 0) return
+            call skip_spaces()
+            if (pos > n) then
+                ierr = 1
+                return
+            end if
+
+            select case (text(pos:pos))
+            case ('#')
+                pos = pos + 1
+                call skip_spaces()
+                if (pos <= n .and. text(pos:pos) == '(') then
+                    pos = pos + 1
+                    call parse_union()
+                    call skip_spaces()
+                    if (pos > n .or. text(pos:pos) /= ')') then
+                        ierr = 1
+                        return
+                    end if
+                    pos = pos + 1
+                    call append_expr_token(expr, MCNP_EXPR_NOT, 0)
+                else
+                    call parse_integer_token(value)
+                    if (ierr /= 0) return
+                    call append_expr_token(expr, MCNP_EXPR_CELL, value)
+                    call append_expr_token(expr, MCNP_EXPR_NOT, 0)
+                end if
+            case ('(')
+                pos = pos + 1
+                call parse_union()
+                call skip_spaces()
+                if (pos > n .or. text(pos:pos) /= ')') then
+                    ierr = 1
+                    return
+                end if
+                pos = pos + 1
+            case default
+                call parse_integer_token(value)
+                if (ierr /= 0) return
+                call append_expr_token(expr, MCNP_EXPR_SURFACE, value)
+            end select
+        end subroutine parse_factor
+
+        subroutine skip_spaces()
+            do while (pos <= n .and. text(pos:pos) == ' ')
+                pos = pos + 1
+            end do
+        end subroutine skip_spaces
+
+        logical function starts_factor()
+            call skip_spaces()
+            starts_factor = .false.
+            if (pos > n) return
+            starts_factor = (text(pos:pos) == '#' .or. text(pos:pos) == '(' .or. text(pos:pos) == '-' .or. &
+                             text(pos:pos) == '+' .or. is_digit(text(pos:pos)))
+        end function starts_factor
+
+        subroutine parse_integer_token(value)
+            integer, intent(out) :: value
+            integer :: start
+
+            call skip_spaces()
+            start = pos
+            if (pos <= n .and. (text(pos:pos) == '-' .or. text(pos:pos) == '+')) pos = pos + 1
+            do while (pos <= n .and. is_digit(text(pos:pos)))
+                pos = pos + 1
+            end do
+            if (pos <= start) then
+                ierr = 1
+                value = 0
+                return
+            end if
+            read(text(start:pos-1), *, iostat=ierr) value
+        end subroutine parse_integer_token
+    end subroutine compile_mcnp_expression
+
+    subroutine append_expr_token(expr, kind, ival)
+        type(mcnp_expr_t), intent(inout) :: expr
+        integer, intent(in) :: kind, ival
+        integer, allocatable :: kind_tmp(:), ival_tmp(:)
+        integer :: n
+
+        n = size(expr%kind)
+        allocate(kind_tmp(n+1), ival_tmp(n+1))
+        if (n > 0) then
+            kind_tmp(1:n) = expr%kind
+            ival_tmp(1:n) = expr%ival
+        end if
+        kind_tmp(n+1) = kind
+        ival_tmp(n+1) = ival
+        call move_alloc(kind_tmp, expr%kind)
+        call move_alloc(ival_tmp, expr%ival)
+    end subroutine append_expr_token
+
+    subroutine estimate_mcnp_bbox(surfaces, bbox)
+        type(mcnp_surface_t), intent(in) :: surfaces(:)
+        real(dp), intent(out) :: bbox(6)
+
+        real(dp) :: xmin, xmax, ymin, ymax, zmin, zmax, fallback
+        integer :: i
+
+        xmin = REGION_BIG; xmax = -REGION_BIG
+        ymin = REGION_BIG; ymax = -REGION_BIG
+        zmin = REGION_BIG; zmax = -REGION_BIG
+        fallback = 1.0_dp
+
+        do i = 1, size(surfaces)
+            select case (surfaces(i)%kind)
+            case (MCNP_SURFACE_PLANE)
+                select case (surfaces(i)%axis)
+                case (1)
+                    xmin = min(xmin, surfaces(i)%value)
+                    xmax = max(xmax, surfaces(i)%value)
+                case (2)
+                    ymin = min(ymin, surfaces(i)%value)
+                    ymax = max(ymax, surfaces(i)%value)
+                case (3)
+                    zmin = min(zmin, surfaces(i)%value)
+                    zmax = max(zmax, surfaces(i)%value)
+                end select
+                fallback = max(fallback, abs(surfaces(i)%value))
+            case (MCNP_SURFACE_CYLINDER)
+                fallback = max(fallback, surfaces(i)%radius)
+                select case (surfaces(i)%axis)
+                case (1)
+                    ymin = min(ymin, surfaces(i)%center(2) - surfaces(i)%radius)
+                    ymax = max(ymax, surfaces(i)%center(2) + surfaces(i)%radius)
+                    zmin = min(zmin, surfaces(i)%center(3) - surfaces(i)%radius)
+                    zmax = max(zmax, surfaces(i)%center(3) + surfaces(i)%radius)
+                case (2)
+                    xmin = min(xmin, surfaces(i)%center(1) - surfaces(i)%radius)
+                    xmax = max(xmax, surfaces(i)%center(1) + surfaces(i)%radius)
+                    zmin = min(zmin, surfaces(i)%center(3) - surfaces(i)%radius)
+                    zmax = max(zmax, surfaces(i)%center(3) + surfaces(i)%radius)
+                case default
+                    xmin = min(xmin, surfaces(i)%center(1) - surfaces(i)%radius)
+                    xmax = max(xmax, surfaces(i)%center(1) + surfaces(i)%radius)
+                    ymin = min(ymin, surfaces(i)%center(2) - surfaces(i)%radius)
+                    ymax = max(ymax, surfaces(i)%center(2) + surfaces(i)%radius)
+                end select
+            case (MCNP_SURFACE_SPHERE)
+                fallback = max(fallback, surfaces(i)%radius)
+                xmin = min(xmin, surfaces(i)%center(1) - surfaces(i)%radius)
+                xmax = max(xmax, surfaces(i)%center(1) + surfaces(i)%radius)
+                ymin = min(ymin, surfaces(i)%center(2) - surfaces(i)%radius)
+                ymax = max(ymax, surfaces(i)%center(2) + surfaces(i)%radius)
+                zmin = min(zmin, surfaces(i)%center(3) - surfaces(i)%radius)
+                zmax = max(zmax, surfaces(i)%center(3) + surfaces(i)%radius)
+            end select
+        end do
+
+        if (xmax <= xmin) then
+            xmin = -fallback
+            xmax = fallback
+        end if
+        if (ymax <= ymin) then
+            ymin = -fallback
+            ymax = fallback
+        end if
+        if (zmax <= zmin) then
+            zmin = -fallback
+            zmax = fallback
+        end if
+
+        bbox = [xmin, xmax, ymin, ymax, zmin, zmax]
+    end subroutine estimate_mcnp_bbox
 
     recursive subroutine expand_cell(cell, cells, planes, cylinder_surfaces, sphere_surfaces, units, lattices, &
                                      translation, parent_region, active_universe_id, active_lattice_id, &
@@ -1586,6 +2191,118 @@ contains
         end do
     end subroutine parse_name_list
 
+    subroutine split_blank_tokens(text, tokens)
+        character(len=*), intent(in) :: text
+        character(len=NAME_LEN), allocatable, intent(out) :: tokens(:)
+
+        character(len=LINE_LEN) :: work
+        character(len=NAME_LEN) :: token
+        character(len=NAME_LEN), allocatable :: tmp(:)
+        integer :: i, n, start, finish
+
+        work = text
+        do i = 1, len_trim(work)
+            if (work(i:i) == char(9) .or. work(i:i) == char(10) .or. work(i:i) == char(13)) work(i:i) = ' '
+        end do
+
+        allocate(tokens(0))
+        i = 1
+        do while (i <= len_trim(work))
+            do while (i <= len_trim(work) .and. work(i:i) == ' ')
+                i = i + 1
+            end do
+            if (i > len_trim(work)) exit
+            start = i
+            do while (i <= len_trim(work) .and. work(i:i) /= ' ')
+                i = i + 1
+            end do
+            finish = i - 1
+            token = trim(adjustl(work(start:finish)))
+            n = size(tokens)
+            allocate(tmp(n+1))
+            if (n > 0) tmp(1:n) = tokens
+            tmp(n+1) = token
+            call move_alloc(tmp, tokens)
+        end do
+    end subroutine split_blank_tokens
+
+    subroutine tokens_to_real_array(tokens, start_idx, values, ierr)
+        character(len=NAME_LEN), intent(in) :: tokens(:)
+        integer, intent(in) :: start_idx
+        real(dp), allocatable, intent(out) :: values(:)
+        integer, intent(out) :: ierr
+
+        integer :: i, n
+
+        ierr = 0
+        if (start_idx > size(tokens)) then
+            allocate(values(0))
+            return
+        end if
+
+        n = size(tokens) - start_idx + 1
+        allocate(values(n))
+        do i = 1, n
+            read(tokens(start_idx + i - 1), *, iostat=ierr) values(i)
+            if (ierr /= 0) return
+        end do
+    end subroutine tokens_to_real_array
+
+    subroutine strip_inline_comment(line)
+        character(len=*), intent(inout) :: line
+        integer :: p
+
+        p = index(line, '$')
+        if (p > 0) line = line(:p-1)
+    end subroutine strip_inline_comment
+
+    logical function is_mcnp_comment(line)
+        character(len=*), intent(in) :: line
+        character(len=LINE_LEN) :: t
+
+        t = adjustl(line)
+        if (len_trim(t) == 0) then
+            is_mcnp_comment = .false.
+            return
+        end if
+
+        if (t(1:1) == 'c' .or. t(1:1) == 'C') then
+            if (len_trim(t) == 1) then
+                is_mcnp_comment = .true.
+            else
+                is_mcnp_comment = (t(2:2) == ' ')
+            end if
+        else
+            is_mcnp_comment = .false.
+        end if
+    end function is_mcnp_comment
+
+    subroutine append_mcnp_card_line(cards, line)
+        character(len=LINE_LEN), allocatable, intent(inout) :: cards(:)
+        character(len=*), intent(in) :: line
+        character(len=LINE_LEN), allocatable :: tmp(:)
+        integer :: n
+
+        n = size(cards)
+        if (is_mcnp_continuation(line) .and. n > 0) then
+            cards(n) = trim(cards(n)) // ' ' // trim(adjustl(line))
+            return
+        end if
+
+        allocate(tmp(n+1))
+        if (n > 0) tmp(1:n) = cards
+        tmp(n+1) = trim(adjustl(line))
+        call move_alloc(tmp, cards)
+    end subroutine append_mcnp_card_line
+
+    logical function is_mcnp_continuation(line)
+        character(len=*), intent(in) :: line
+        integer :: n
+
+        n = min(5, len(line))
+        is_mcnp_continuation = (n >= 5 .and. line(1:5) == '     ')
+    end function is_mcnp_continuation
+
     subroutine commas_to_spaces(text)
         character(len=*), intent(inout) :: text
         integer :: i
@@ -1689,6 +2406,34 @@ contains
             end if
         end do
     end function find_lattice_index
+
+    integer function find_mcnp_surface_index(surfaces, id)
+        type(mcnp_surface_t), intent(in) :: surfaces(:)
+        integer, intent(in) :: id
+        integer :: i
+
+        find_mcnp_surface_index = 0
+        do i = 1, size(surfaces)
+            if (surfaces(i)%id == id) then
+                find_mcnp_surface_index = i
+                return
+            end if
+        end do
+    end function find_mcnp_surface_index
+
+    integer function find_mcnp_cell_index(cells, id)
+        type(mcnp_cell_t), intent(in) :: cells(:)
+        integer, intent(in) :: id
+        integer :: i
+
+        find_mcnp_cell_index = 0
+        do i = 1, size(cells)
+            if (cells(i)%id == id) then
+                find_mcnp_cell_index = i
+                return
+            end if
+        end do
+    end function find_mcnp_cell_index
 
     integer function common_background_material(lattice, units)
         type(lattice_spec_t), intent(in) :: lattice
@@ -1924,6 +2669,39 @@ contains
         call move_alloc(tmp, cells)
     end subroutine append_cell
 
+    subroutine append_mcnp_surface(surfaces, surface)
+        type(mcnp_surface_t), allocatable, intent(inout) :: surfaces(:)
+        type(mcnp_surface_t), intent(in) :: surface
+        type(mcnp_surface_t), allocatable :: tmp(:)
+        integer :: n
+
+        n = size(surfaces)
+        allocate(tmp(n+1))
+        if (n > 0) tmp(1:n) = surfaces
+        tmp(n+1) = surface
+        call move_alloc(tmp, surfaces)
+    end subroutine append_mcnp_surface
+
+    subroutine append_mcnp_cell(cells, cell)
+        type(mcnp_cell_t), allocatable, intent(inout) :: cells(:)
+        type(mcnp_cell_t), intent(in) :: cell
+        type(mcnp_cell_t), allocatable :: tmp(:)
+        integer :: n
+
+        n = size(cells)
+        allocate(tmp(n+1))
+        if (n > 0) tmp(1:n) = cells
+        tmp(n+1)%id = cell%id
+        tmp(n+1)%material_id = cell%material_id
+        tmp(n+1)%expr_text = cell%expr_text
+        if (allocated(cell%expr%kind)) then
+            allocate(tmp(n+1)%expr%kind(size(cell%expr%kind)), tmp(n+1)%expr%ival(size(cell%expr%ival)))
+            tmp(n+1)%expr%kind = cell%expr%kind
+            tmp(n+1)%expr%ival = cell%expr%ival
+        end if
+        call move_alloc(tmp, cells)
+    end subroutine append_mcnp_cell
+
     subroutine append_box(model, box)
         type(geometry_model_t), intent(inout) :: model
         type(box_primitive_t), intent(in) :: box
@@ -1972,6 +2750,8 @@ contains
     subroutine reset_model(model)
         type(geometry_model_t), intent(out) :: model
         allocate(model%boxes(0), model%cylinders(0), model%spheres(0))
+        allocate(model%mcnp_surfaces(0), model%mcnp_cells(0))
+        model%is_mcnp = .false.
         model%n_cells = 0
         model%n_surfaces = 0
         model%n_materials = 0
@@ -2056,6 +2836,11 @@ contains
         real(dp), intent(in) :: x1, y1, z1, x2, y2, z2
         same_xyz_center = abs(x1 - x2) < 1.0e-9_dp .and. abs(y1 - y2) < 1.0e-9_dp .and. abs(z1 - z2) < 1.0e-9_dp
     end function same_xyz_center
+
+    pure logical function is_digit(ch)
+        character(len=*), intent(in) :: ch
+        is_digit = len_trim(ch) == 1 .and. ch(1:1) >= '0' .and. ch(1:1) <= '9'
+    end function is_digit
 
     pure function empty_region() result(region)
         type(region_spec_t) :: region
