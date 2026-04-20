@@ -1,53 +1,36 @@
-# vis3d Fortran 2003 skeleton
+# vis3d Fortran exporter
 
-This is a multi-file Fortran 2003 skeleton for the MCX/MCNP VIS3D exporter described in the design notes.
+这是一个基于 Fortran 2003 的 VIS3D 导出器项目，当前重点是把 MCX XML 输入卡中的几何转换为 VTK 文件，便于在 ParaView 中检查模型。
 
-## Included modules
+## 文档入口
 
-- `vis3d_kinds`
-- `vis3d_constants`
-- `vis3d_host_types`
-- `vis3d_types`
-- `vis3d_config`
-- `vis3d_input_common`
-- `vis3d_input_mcx`
-- `vis3d_input_mcnp`
-- `vis3d_geom_context`
-- `vis3d_bbox`
-- `vis3d_sampler_voxel`
-- `vis3d_surface_patch`
-- `vis3d_surface_rcc`
-- `vis3d_surface_trc`
-- `vis3d_surface_quadric`
-- `vis3d_writer_xml`
-- `vis3d_writer_vti`
-- `vis3d_writer_vtp`
-- `vis3d_writer_vtu`
-- `vis3d_validate`
-- `vis3d_driver`
+- 开发文档：[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)
+- 使用文档：[docs/USAGE.md](docs/USAGE.md)
+- 验证说明：[validation/README.md](validation/README.md)
 
-## Notes
+## 当前能力
 
-- This is a **skeleton**, not a full integration with MCX.
-- The `vis3d_host_types` module contains placeholder host geometry types and query hooks.
-- The `.vti` writer is usable for quick inspection in ParaView.
-- The surface route is intentionally minimal and currently exports a simple bounding-box shell placeholder.
+- 读取 MCX XML 输入
+- 默认导出表面 `VTP`
+- 支持 `VTI`、`VTP`、`VTU`
+- 已覆盖一批 MCX 示例中的常见几何：
+  - plane box region
+  - `cylinder-z`
+  - `sphere`
+  - `pin`
+  - `particle`
+  - `rectangular lattice`
+  - `universe` 递归 `fill`
 
-## Build
+## 快速构建
 
-```bash
-cmake -S . -B build
-cmake --build build
+```powershell
+cmake -S . -B build-winlibs -G "MinGW Makefiles"
+cmake --build build-winlibs -j 4
 ```
 
-## Demo
+## 快速验证
 
-```bash
-./build/vis3d_export_demo input.i auto
+```powershell
+.\validation\run_mcx_examples.ps1
 ```
-
-The demo driver:
-- reads `@VIS3D` directives from MCX-style or MCNP-style comment lines,
-- builds a placeholder geometry context,
-- exports either `.vti` or `.vtp`.
-
