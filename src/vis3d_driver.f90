@@ -108,6 +108,8 @@ contains
                 write(*,'(A)') 'VIS3D error: failed to sample voxel model.'
                 return
             end if
+            call inspect_voxel_result(vox, ierr)
+            if (ierr /= 0) return
             call write_vti(trim(cfg%output), vox, cfg%fields, ierr)
             if (ierr /= 0) then
                 write(*,'(A)') 'VIS3D error: failed to write voxel output.'
@@ -155,6 +157,40 @@ contains
                 ierr = 1
             end select
         end subroutine resolve_export_plan
+
+        subroutine inspect_voxel_result(vox, ierr)
+            type(voxel_dataset_t), intent(in) :: vox
+            integer, intent(out) :: ierr
+            integer :: unresolved_count, total_count, first_cell_id
+
+            ierr = 0
+            if (.not. allocated(vox%cell_id)) then
+                ierr = 1
+                write(*,'(A)') 'VIS3D error: voxel result is missing cell_id data.'
+                return
+            end if
+
+            total_count = size(vox%cell_id)
+            unresolved_count = count(vox%cell_id < 0)
+            if (unresolved_count >= total_count) then
+                ierr = 1
+                write(*,'(A)') 'VIS3D error: voxel sampling matched no cells inside the export bbox.'
+                write(*,'(A,I0,A,I0,A,I0)') 'VIS3D grid: ', vox%grid%nx, ' x ', vox%grid%ny, ' x ', vox%grid%nz
+                write(*,'(A,6(1X,F0.6))') 'VIS3D bbox:', &
+                    vox%bbox%xmin, vox%bbox%xmax, vox%bbox%ymin, vox%bbox%ymax, vox%bbox%zmin, vox%bbox%zmax
+                write(*,'(A)') 'Try tightening ORIGIN/WIDTH in @VIS3D or checking unsupported MCNP geometry.'
+                return
+            end if
+
+            first_cell_id = vox%cell_id(1,1,1)
+            if (all(vox%cell_id == first_cell_id)) then
+                write(*,'(A,I0,A)') 'VIS3D warning: the voxel grid resolved to a single cell_id = ', first_cell_id, '.'
+                write(*,'(A)') 'ParaView may look empty until you inspect a Slice/Clip or tighten the export bbox.'
+            else if (unresolved_count > 0) then
+                write(*,'(A,I0,A,I0,A)') 'VIS3D warning: ', unresolved_count, ' of ', total_count, &
+                    ' voxels did not match any cell.'
+            end if
+        end subroutine inspect_voxel_result
 
         integer function guess_syntax(filename)
             character(len=*), intent(in) :: filename

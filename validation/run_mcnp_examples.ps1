@@ -9,19 +9,42 @@ function Get-VtiCellIds {
         [string]$Path
     )
 
-    $text = Get-Content -LiteralPath $Path -Raw
-    $match = [regex]::Match(
-        $text,
-        'Name="cell_id"[^>]*>\s*(.*?)\s*</DataArray>',
-        [System.Text.RegularExpressions.RegexOptions]::Singleline
-    )
-    if (-not $match.Success) {
+    $inCellData = $false
+    $inCellIdArray = $false
+    $values = New-Object 'System.Collections.Generic.HashSet[int]'
+
+    foreach ($line in [System.IO.File]::ReadLines($Path)) {
+        if (-not $inCellData) {
+            if ($line -match '<CellData\b') {
+                $inCellData = $true
+            }
+            continue
+        }
+
+        if (-not $inCellIdArray) {
+            if ($line -match '</CellData>') {
+                break
+            }
+            if ($line -match 'Name="cell_id"') {
+                $inCellIdArray = $true
+            }
+            continue
+        }
+
+        if ($line -match '</DataArray>') {
+            break
+        }
+
+        foreach ($match in [regex]::Matches($line, '-?\d+')) {
+            [void]$values.Add([int]$match.Value)
+        }
+    }
+
+    if ($values.Count -eq 0) {
         throw "cell_id array not found in $Path"
     }
 
-    return [regex]::Matches($match.Groups[1].Value, '-?\d+') |
-        ForEach-Object { [int]$_.Value } |
-        Sort-Object -Unique
+    return @($values) | Sort-Object
 }
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
