@@ -1,0 +1,10 @@
+namespace Vis3D.Installer;
+
+internal sealed class TransparentTableLayoutPanel : TableLayoutPanel
+{
+    public TransparentTableLayoutPanel()
+    {
+        SetStyle(ControlStyles.SupportsTransparentBackColor, true);
+        BackColor = Color.Transparent;
+    }
+}

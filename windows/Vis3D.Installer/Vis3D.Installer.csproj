@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net7.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>Vis3DSetup</AssemblyName>
+    <RootNamespace>Vis3D.Installer</RootNamespace>
+    <Product>Vis3D Setup</Product>
+    <Company>Vis3D Project</Company>
+    <Description>Installer for the Vis3D desktop conversion workspace.</Description>
+    <Version>1.3.1</Version>
+    <FileVersion>1.3.1.0</FileVersion>
+    <AssemblyVersion>1.3.1.0</AssemblyVersion>
+    <InformationalVersion>1.3.1</InformationalVersion>
+    <ApplicationIcon>..\assets\vis3d.ico</ApplicationIcon>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+
+  <ItemGroup Condition=" '$(PayloadZipPath)' != '' and Exists('$(PayloadZipPath)') ">
+    <EmbeddedResource Include="$(PayloadZipPath)" LogicalName="Vis3D.Installer.Payload.zip" />
+  </ItemGroup>
+</Project>

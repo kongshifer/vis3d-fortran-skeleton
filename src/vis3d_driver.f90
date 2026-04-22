@@ -19,10 +19,11 @@ module vis3d_driver
     public :: vis3d_run
 
 contains
-    subroutine vis3d_run(input_file, syntax_hint, ierr)
+    subroutine vis3d_run(input_file, syntax_hint, ierr, output_dir_override)
         character(len=*), intent(in) :: input_file
         character(len=*), intent(in) :: syntax_hint
         integer, intent(out) :: ierr
+        character(len=*), intent(in), optional :: output_dir_override
 
         integer :: syntax_kind, export_mode, export_format
         type(vis3d_config_t) :: cfg
@@ -64,6 +65,9 @@ contains
         if (ierr /= 0) then
             write(*,'(A)') 'VIS3D error: unsupported MODE/FORMAT combination.'
             return
+        end if
+        if (present(output_dir_override)) then
+            call apply_output_dir_override(input_file, output_dir_override, export_format, cfg)
         end if
 
         call geometry_build_from_input(input_file, syntax_kind, model, ierr)
@@ -191,6 +195,71 @@ contains
                     ' voxels did not match any cell.'
             end if
         end subroutine inspect_voxel_result
+
+        subroutine apply_output_dir_override(input_file, output_dir, export_format, cfg)
+            character(len=*), intent(in) :: input_file
+            character(len=*), intent(in) :: output_dir
+            integer, intent(in) :: export_format
+            type(vis3d_config_t), intent(inout) :: cfg
+            character(len=256) :: stem
+            character(len=8) :: ext
+
+            if (len_trim(output_dir) == 0) return
+            stem = input_stem(input_file)
+            ext = format_extension(export_format)
+            cfg%output = join_path(trim(output_dir), trim(stem) // '.' // trim(ext))
+        end subroutine apply_output_dir_override
+
+        function input_stem(filename) result(stem)
+            character(len=*), intent(in) :: filename
+            character(len=256) :: stem
+            integer :: i, last_sep, last_dot
+
+            stem = trim(filename)
+            last_sep = 0
+            last_dot = 0
+            do i = 1, len_trim(filename)
+                if (filename(i:i) == '\' .or. filename(i:i) == '/') last_sep = i
+                if (filename(i:i) == '.') last_dot = i
+            end do
+
+            if (last_dot > last_sep) then
+                stem = trim(filename(last_sep+1:last_dot-1))
+            else
+                stem = trim(filename(last_sep+1:len_trim(filename)))
+            end if
+        end function input_stem
+
+        function format_extension(fmt) result(ext)
+            integer, intent(in) :: fmt
+            character(len=8) :: ext
+
+            select case (fmt)
+            case (VIS3D_FMT_VTI)
+                ext = 'vti'
+            case (VIS3D_FMT_VTU)
+                ext = 'vtu'
+            case default
+                ext = 'vtp'
+            end select
+        end function format_extension
+
+        function join_path(dirpath, leaf) result(out)
+            character(len=*), intent(in) :: dirpath
+            character(len=*), intent(in) :: leaf
+            character(len=256) :: out
+            integer :: n
+
+            out = trim(dirpath)
+            n = len_trim(out)
+            if (n <= 0) then
+                out = trim(leaf)
+            else if (out(n:n) == '\' .or. out(n:n) == '/') then
+                out = trim(out) // trim(leaf)
+            else
+                out = trim(out) // '\' // trim(leaf)
+            end if
+        end function join_path
 
         integer function guess_syntax(filename)
             character(len=*), intent(in) :: filename
